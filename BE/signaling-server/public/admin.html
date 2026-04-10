@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Signaling Admin</title>
+  <style>
+    :root {
+      --bg: #f5efe4;
+      --panel: rgba(255, 252, 247, 0.94);
+      --panel-strong: #fffaf1;
+      --ink: #1e1a16;
+      --muted: #6d6258;
+      --line: rgba(60, 43, 27, 0.12);
+      --accent: #c95f35;
+      --accent-strong: #9f3f1c;
+      --accent-soft: rgba(201, 95, 53, 0.14);
+      --danger: #a63131;
+      --success: #2e7d5f;
+      --shadow: 0 24px 60px rgba(79, 52, 25, 0.12);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "Segoe UI", sans-serif;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at top left, rgba(201, 95, 53, 0.18), transparent 28%),
+        radial-gradient(circle at right 20%, rgba(56, 115, 104, 0.16), transparent 24%),
+        linear-gradient(180deg, #f8f2e8 0%, #efe5d5 100%);
+    }
+
+    .shell {
+      width: min(1200px, calc(100% - 32px));
+      margin: 32px auto;
+      display: grid;
+      gap: 20px;
+    }
+
+    .hero,
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 24px;
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(16px);
+    }
+
+    .hero {
+      padding: 28px;
+      display: flex;
+      justify-content: space-between;
+      align-items: end;
+      gap: 16px;
+    }
+
+    .hero h1 {
+      margin: 0 0 8px;
+      font-size: clamp(2rem, 4vw, 3.25rem);
+      line-height: 1;
+      letter-spacing: -0.04em;
+    }
+
+    .hero p,
+    .meta {
+      margin: 0;
+      color: var(--muted);
+    }
+
+    .panel {
+      padding: 24px;
+    }
+
+    .toolbar,
+    .stats {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .toolbar {
+      justify-content: space-between;
+      margin-bottom: 20px;
+    }
+
+    .stats strong {
+      font-size: 1.35rem;
+    }
+
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: var(--accent-soft);
+      color: var(--accent-strong);
+      font-size: 0.92rem;
+      font-weight: 700;
+    }
+
+    button,
+    input,
+    select {
+      font: inherit;
+    }
+
+    button {
+      border: 0;
+      border-radius: 14px;
+      padding: 12px 16px;
+      cursor: pointer;
+      transition: transform 160ms ease, opacity 160ms ease, background 160ms ease;
+    }
+
+    button:hover {
+      transform: translateY(-1px);
+    }
+
+    .primary {
+      background: var(--accent);
+      color: white;
+    }
+
+    .ghost {
+      background: rgba(30, 26, 22, 0.06);
+      color: var(--ink);
+    }
+
+    .danger {
+      background: rgba(166, 49, 49, 0.12);
+      color: var(--danger);
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1.6fr) minmax(320px, 0.9fr);
+      gap: 20px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    th,
+    td {
+      padding: 14px 12px;
+      text-align: left;
+      border-bottom: 1px solid var(--line);
+      vertical-align: top;
+    }
+
+    th {
+      color: var(--muted);
+      font-size: 0.84rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    tbody tr:hover {
+      background: rgba(255, 255, 255, 0.45);
+    }
+
+    .status-pill {
+      display: inline-flex;
+      padding: 6px 10px;
+      border-radius: 999px;
+      font-size: 0.8rem;
+      font-weight: 700;
+    }
+
+    .status-active {
+      background: rgba(46, 125, 95, 0.12);
+      color: var(--success);
+    }
+
+    .status-inactive {
+      background: rgba(109, 98, 88, 0.12);
+      color: var(--muted);
+    }
+
+    .actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .form-grid {
+      display: grid;
+      gap: 14px;
+    }
+
+    .field {
+      display: grid;
+      gap: 8px;
+    }
+
+    .field label {
+      font-size: 0.88rem;
+      color: var(--muted);
+      font-weight: 700;
+    }
+
+    .field input,
+    .field select {
+      width: 100%;
+      border: 1px solid var(--line);
+      background: var(--panel-strong);
+      border-radius: 14px;
+      padding: 12px 14px;
+      color: var(--ink);
+    }
+
+    .inline {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .checkbox {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      color: var(--ink);
+      padding-top: 6px;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    .message {
+      min-height: 24px;
+      font-size: 0.92rem;
+      color: var(--muted);
+    }
+
+    .message.error {
+      color: var(--danger);
+    }
+
+    .message.success {
+      color: var(--success);
+    }
+
+    @media (max-width: 980px) {
+      .layout {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 640px) {
+      .shell {
+        width: min(100% - 20px, 1200px);
+        margin: 20px auto;
+      }
+
+      .hero,
+      .panel {
+        border-radius: 20px;
+      }
+
+      .inline {
+        grid-template-columns: 1fr;
+      }
+
+      th:nth-child(5),
+      td:nth-child(5),
+      th:nth-child(6),
+      td:nth-child(6) {
+        display: none;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <section class="hero">
+      <div>
+        <p class="tag">Admin Console</p>
+        <h1>User Management</h1>
+      </div>
+    </section>
+
+    <section class="panel layout">
+      <div>
+        <div class="toolbar">
+          <div class="stats">
+            <strong id="userCount">0</strong>
+            <span class="meta">users</span>
+          </div>
+          <div class="actions">
+            <button id="refreshBtn" class="ghost" type="button">Refresh</button>
+            <button id="createBtn" class="primary" type="button">Add User</button>
+          </div>
+        </div>
+
+        <div style="overflow:auto;">
+          <table>
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>User Name</th>
+                <th>Display Name</th>
+                <th>Phone</th>
+                <th>Tenant</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="userTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <aside>
+        <h2 id="formTitle">Add new User</h2>
+        <form id="userForm" class="form-grid">
+          <div class="inline">
+            <div class="field">
+              <label for="phone">Phone</label>
+              <input id="phone" name="phone" placeholder="101" required>
+            </div>
+            <div class="field">
+              <label for="tenant">Tenant</label>
+              <input id="tenant" name="tenant" placeholder="Tenant" required>
+            </div>
+          </div>
+
+          <div class="inline">
+            <div class="field">
+              <label for="userName">User Name</label>
+              <input id="userName" name="userName" placeholder="user1" required>
+            </div>
+            <div class="field">
+              <label for="password">Password</label>
+              <input id="password" name="password" placeholder="password" required>
+            </div>
+          </div>
+
+          <div class="field">
+            <label for="displayName">Display Name</label>
+            <input id="displayName" name="displayName" placeholder="Display Name" required>
+          </div>
+
+          <label id="isActiveWrapper" class="checkbox hidden">
+            <input id="isActive" name="isActive" type="checkbox">
+            <span>isActive</span>
+          </label>
+
+          <div class="actions">
+            <button id="submitBtn" class="primary" type="submit">Save</button>
+            <button id="resetBtn" class="ghost" type="button">Clear Form</button>
+          </div>
+          <div id="message" class="message"></div>
+        </form>
+      </aside>
+    </section>
+  </main>
+
+  <script>
+    const state = {
+      editingId: null,
+      users: [],
+    };
+
+    const userTableBody = document.getElementById('userTableBody');
+    const userCount = document.getElementById('userCount');
+    const form = document.getElementById('userForm');
+    const formTitle = document.getElementById('formTitle');
+    const message = document.getElementById('message');
+    const createBtn = document.getElementById('createBtn');
+    const refreshBtn = document.getElementById('refreshBtn');
+    const resetBtn = document.getElementById('resetBtn');
+    const submitBtn = document.getElementById('submitBtn');
+    const isActiveWrapper = document.getElementById('isActiveWrapper');
+    const fields = {
+      userName: document.getElementById('userName'),
+      password: document.getElementById('password'),
+      displayName: document.getElementById('displayName'),
+      phone: document.getElementById('phone'),
+      tenant: document.getElementById('tenant'),
+      isActive: document.getElementById('isActive'),
+    };
+
+    function setMessage(text, type = '') {
+      message.textContent = text;
+      message.className = `message ${type}`.trim();
+    }
+
+    function getFormPayload() {
+      const formData = new FormData(form);
+      const payload = {
+        userName: formData.get('userName').trim(),
+        password: formData.get('password'),
+        displayName: formData.get('displayName').trim(),
+        phone: formData.get('phone').trim(),
+        tenant: formData.get('tenant').trim(),
+      };
+
+      if (state.editingId) {
+        payload.isActive = fields.isActive.checked;
+      }
+
+      return payload;
+    }
+
+    function fillForm(user) {
+      fields.userName.value = user.userName;
+      fields.userName.readOnly = true;
+      fields.password.value = user.password;
+      fields.displayName.value = user.displayName;
+      fields.phone.value = user.phone;
+      fields.tenant.value = user.tenant;
+      fields.isActive.checked = Boolean(user.isActive);
+
+      state.editingId = user.id;
+      isActiveWrapper.classList.remove('hidden');
+      formTitle.textContent = `Edit user ${user.userName}`;
+      submitBtn.textContent = 'Update';
+      setMessage(`Editing the user ${user.displayName}`);
+    }
+
+    function resetForm(clearMessage = true) {
+      form.reset();
+      fields.userName.readOnly = false;
+      fields.isActive.checked = true;
+      isActiveWrapper.classList.add('hidden');
+      state.editingId = null;
+      formTitle.textContent = 'Add new User';
+      submitBtn.textContent = 'Save';
+      if (clearMessage) {
+        setMessage('');
+      }
+    }
+
+    function renderUsers() {
+      userCount.textContent = state.users.length;
+
+      if (state.users.length === 0) {
+        userTableBody.innerHTML = '<tr><td colspan="8">Empty list.</td></tr>';
+        return;
+      }
+
+      userTableBody.innerHTML = state.users.map((user) => `
+        <tr>
+          <td>${user.id}</td>
+          <td>${user.userName}</td>
+          <td>${user.displayName}</td>
+          <td>${user.phone}</td>
+          <td>${user.tenant}</td>
+          <td>
+            <span class="status-pill ${user.isActive && user.status === 'active' ? 'status-active' : 'status-inactive'}">
+              ${user.status}${user.isActive ? '' : ' / disabled'}
+            </span>
+          </td>
+          <td>
+            <div class="actions">
+              <button class="ghost" type="button" data-action="edit" data-id="${user.id}">Edit</button>
+              <button class="danger" type="button" data-action="delete" data-id="${user.id}">Delete</button>
+            </div>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    async function fetchUsers() {
+      const response = await fetch('/api/users');
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to fetch users');
+      }
+
+      state.users = await response.json();
+      renderUsers();
+    }
+
+    async function saveUser(payload) {
+      const isEditing = Boolean(state.editingId);
+      const endpoint = isEditing ? `/api/users/${encodeURIComponent(state.editingId)}` : '/api/users';
+      const method = isEditing ? 'PUT' : 'POST';
+
+      const response = await fetch(endpoint, {
+        method,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.message || 'Failed to save user');
+      }
+
+      return data;
+    }
+
+    async function deleteUser(id) {
+      const response = await fetch(`/api/users/${encodeURIComponent(id)}`, {
+        method: 'DELETE',
+      });
+
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.message || 'Failed to delete user');
+      }
+
+      return data;
+    }
+
+    userTableBody.addEventListener('click', async (event) => {
+      const button = event.target.closest('button');
+      if (!button) {
+        return;
+      }
+
+      const { action, id } = button.dataset;
+      const user = state.users.find((item) => item.id === id);
+      if (!user) {
+        return;
+      }
+
+      if (action === 'edit') {
+        fillForm(user);
+        return;
+      }
+
+      if (action === 'delete') {
+        const confirmed = window.confirm(`Delete user ${user.userName}?`);
+        if (!confirmed) {
+          return;
+        }
+
+        try {
+          await deleteUser(id);
+          await fetchUsers();
+          if (state.editingId === id) {
+            resetForm();
+          }
+          setMessage(`Deleted user ${user.userName}`, 'success');
+        } catch (error) {
+          setMessage(error.message, 'error');
+        }
+      }
+    });
+
+    form.addEventListener('submit', async (event) => {
+      event.preventDefault();
+
+      try {
+        const payload = getFormPayload();
+        const savedUser = await saveUser(payload);
+        const wasCreating = !state.editingId;
+        await fetchUsers();
+        if (wasCreating) {
+          resetForm(false);
+        }
+        setMessage(`Saved user ${savedUser.userName}`, 'success');
+      } catch (error) {
+        setMessage(error.message, 'error');
+      }
+    });
+
+    createBtn.addEventListener('click', resetForm);
+    refreshBtn.addEventListener('click', async () => {
+      try {
+        await fetchUsers();
+        setMessage('Refreshed the list', 'success');
+      } catch (error) {
+        setMessage(error.message, 'error');
+      }
+    });
+    resetBtn.addEventListener('click', resetForm);
+
+    fetchUsers().catch((error) => {
+      setMessage(error.message, 'error');
+    });
+  </script>
+</body>
+</html>

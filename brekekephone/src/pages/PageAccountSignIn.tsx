@@ -145,12 +145,19 @@ const css = StyleSheet.create({
 const DemoLogin = observer(() => {
   const [username, setUsername] = useState(DEMO_LOGIN_SETTINGS.defaultUsername)
   const [password, setPassword] = useState(DEMO_LOGIN_SETTINGS.defaultPassword)
+  const [errorMessage, setErrorMessage] = useState('')
 
-  const handleLogin = () => {
-    demoStore.login(username, () => {
-      // Navigate to contacts page after login
-      ctx.nav.goToPageContactUsers()
-    })
+  const handleLogin = async () => {
+    try {
+      setErrorMessage('')
+      await demoStore.login(username, password, () => {
+        ctx.nav.goToPageContactUsers()
+      })
+    } catch (error: any) {
+      const message = error?.message || 'Sign in failed'
+      setErrorMessage(message)
+      ctx.toast.error({ err: new Error(message) })
+    }
   }
 
   // Show loading spinner
@@ -206,6 +213,11 @@ const DemoLogin = observer(() => {
           >
             <RnText style={css.demoButtonText}>Sign In</RnText>
           </RnTouchableOpacity>
+          {!!errorMessage && (
+            <RnText style={{ color: 'white', marginTop: 12, textAlign: 'center' }}>
+              {errorMessage}
+            </RnText>
+          )}
         </View>
       </View>
 

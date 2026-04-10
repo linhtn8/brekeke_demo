@@ -62,7 +62,10 @@ export class WebRTCStore {
       }),
       onUserOffline: action(({ userId }) => {
         this.onlineUsers = this.onlineUsers.filter(id => id !== userId)
-        if (this.currentCall.isActive && this.currentCall.callee?.phone === userId) {
+        if (
+          this.currentCall.isActive &&
+          (this.currentCall.callee?.id === userId || this.currentCall.callee?.phone === userId)
+        ) {
           ctx.toast.info(`User ${userId} went offline.`)
           this.endCall(true)
         }
@@ -73,7 +76,7 @@ export class WebRTCStore {
           signalingService.rejectCall(from, 'busy')
           return
         }
-        const contact = DEMO_CONTACTS.find(c => c.phone === from) || { id: from, name: from, phone: from }
+        const contact = DEMO_CONTACTS.find(c => c.id === from || c.phone === from) || { id: from, name: from, phone: from }
         this.currentCall = {
           isActive: true,
           callee: contact,
@@ -125,7 +128,7 @@ export class WebRTCStore {
       }),
       onIceCandidate: (candidate) => {
         if (this.currentCall.callee) {
-          signalingService.sendIceCandidate(this.currentCall.callee.phone, candidate)
+          signalingService.sendIceCandidate(this.currentCall.callee.id, candidate)
         }
       },
       onConnectionStateChange: action((state) => {
@@ -185,8 +188,14 @@ export class WebRTCStore {
       return false
     }
 
-    const contact = DEMO_CONTACTS.find(c => c.id === contactId) || { id: contactId, name: contactId, phone: contactId }
-    if (!this.onlineUsers.includes(contact.phone)) {
+    const contact =
+      DEMO_CONTACTS.find(c => c.id === contactId || c.phone === contactId) ||
+      { id: contactId, name: contactId, phone: contactId }
+
+    const isOnline =
+      this.onlineUsers.includes(contact.id) ||
+      this.onlineUsers.includes(contact.phone)
+    if (!isOnline) {
       ctx.toast.warning('User is offline')
       return false
     }
@@ -205,7 +214,7 @@ export class WebRTCStore {
       webrtcService.addLocalStream()
       const offer = await webrtcService.createOffer()
       
-      signalingService.sendCallOffer(contact.phone, offer, ctx.auth.signedInId || 'Me')
+      signalingService.sendCallOffer(contact.id, offer, ctx.auth.signedInId || 'Me')
       this.currentCall.status = 'ringing'
       
       this.startCallTimeout(() => {
@@ -233,7 +242,7 @@ export class WebRTCStore {
       webrtcService.addLocalStream()
       const answer = await webrtcService.createAnswer(this.currentCall.remoteOffer)
       
-      signalingService.sendCallAnswer(this.currentCall.callee!.phone, answer)
+      signalingService.sendCallAnswer(this.currentCall.callee!.id, answer)
       this.currentCall.status = 'connected'
       this.startDurationTimer()
     } catch (e: any) {
@@ -248,14 +257,14 @@ export class WebRTCStore {
 
   @action rejectCall() {
     if (this.currentCall.callee && this.currentCall.isIncoming) {
-      signalingService.rejectCall(this.currentCall.callee.phone, 'declined')
+      signalingService.rejectCall(this.currentCall.callee.id, 'declined')
     }
     this.resetCallState()
   }
 
   @action endCall(force: boolean = false) {
     if (!force && this.currentCall.callee && this.currentCall.isActive) {
-      signalingService.endCall(this.currentCall.callee.phone)
+      signalingService.endCall(this.currentCall.callee.id)
     }
     this.resetCallState()
   }

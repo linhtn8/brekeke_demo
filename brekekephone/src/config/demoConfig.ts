@@ -111,8 +111,8 @@ export const PHASE_2_ENABLED = true // Toggle Phase 2 (WebRTC real calling)
 export const WEBRTC_CONFIG = {
   // Signaling server URL
   // Replace with your local IP if testing on physical devices (e.g. 'ws://192.168.1.10:8080')
-  // signalingServerUrl: 'ws://localhost:8080',
-  signalingServerUrl: 'ws://172.65.1.240:8080',
+  signalingServerUrl: 'ws://localhost:8080',
+  // signalingServerUrl: 'ws://172.65.1.240:8080',
   // signalingServerUrl: 'wss://salty-squids-brake.loca.lt',
 
   // STUN servers for NAT traversal
