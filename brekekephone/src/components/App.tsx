@@ -28,7 +28,7 @@ import { RootView } from '#/components/RootView'
 import { ToastRoot } from '#/components/ToastRoot'
 import { v } from '#/components/variables'
 import { defaultTimeout, isIos, isWeb } from '#/config'
-import { DEMO_MODE } from '#/config/demoConfig'
+import { DEMO_COLORS, DEMO_MODE } from '#/config/demoConfig'
 import { isEmbed } from '#/embed/polyfill'
 import { RenderAllCalls } from '#/pages/PageCallManage'
 import { PageCustomPageView } from '#/pages/PageCustomPageView'
@@ -311,7 +311,7 @@ const css = StyleSheet.create({
   },
   LoadingFullscreen: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: '#74bf53', // old color from design, not g.colors.primary
+    backgroundColor: DEMO_MODE ? DEMO_COLORS.primary : '#74bf53', // BAP theme or old color from design
     alignItems: 'center',
     justifyContent: 'center',
   },
