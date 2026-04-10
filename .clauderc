@@ -1,0 +1,4 @@
+{
+  "theme": "dark",
+  "customInstructions": "You are working in the Brekeke Phone project. ALWAYS read the `AGENTS.md` file in the root directory and the files in the `docs/` folder before making any architectural or code changes. Strictly follow the TypeScript, MobX, and WebRTC rules defined in AGENTS.md."
+}

@@ -17,6 +17,7 @@ import { BrekekeGradient } from '#/components/BrekekeGradient'
 import { RnIcon, RnImage, RnText, RnTouchableOpacity } from '#/components/Rn'
 import { v } from '#/components/variables'
 import { bundleIdentifier, isWeb } from '#/config'
+import { DEMO_MODE } from '#/config/demoConfig'
 import { isEmbed, webRootId } from '#/embed/polyfill'
 import { intl } from '#/stores/intl'
 import { parse } from '#/utils/deeplink-parse'
@@ -96,7 +97,7 @@ const css = StyleSheet.create({
 })
 
 export const App = () => {
-  const [isBrowser, setIsBrowser] = useState(!isIOS && !isAndroid)
+  const [isBrowser, setIsBrowser] = useState(DEMO_MODE || (!isIOS && !isAndroid))
   let child: ReactElement | null = null
   if (isBrowser) {
     child = <RnApp />

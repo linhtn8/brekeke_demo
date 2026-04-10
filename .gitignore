@@ -1,0 +1,100 @@
+# ==============================
+# Development & AI Temp Files
+# ==============================
+*.log
+*.diff
+*.patch
+server_output.log
+patch.diff
+
+# ==============================
+# Dependency directories
+# ==============================
+node_modules/
+jspm_packages/
+.yarn/
+!.yarn/cache
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/sdks
+!.yarn/versions
+
+# ==============================
+# Environment Variables
+# ==============================
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+.env*.local
+
+# ==============================
+# Node & Build Outputs
+# ==============================
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+build/
+dist/
+out/
+.next/
+coverage/
+.nyc_output/
+.serverless/
+
+# ==============================
+# React Native / Expo
+# ==============================
+.expo/
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+*.orig.*
+
+# Android
+android/.gradle
+android/build/
+android/app/build/
+android/app/src/main/assets/
+android/app/src/release/play/
+android/app/src/debug/play/
+android/app/src/main/res/drawable-*/
+android/app/src/main/res/raw/
+android/local.properties
+android/captures/
+*.apk
+*.aab
+
+# iOS
+ios/build/
+ios/Pods/
+ios/Podfile.lock
+ios/*.xcworkspace/xcuserdata/
+ios/*.xcodeproj/xcuserdata/
+ios/*.xcodeproj/project.xcworkspace/xcuserdata/
+ios/*.xcworkspace/xcshareddata/SwiftPM/
+ios/DerivedData/
+*.ipa
+
+# ==============================
+# OS & IDE Files
+# ==============================
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+.idea/
+.vscode/
+*.swp
+*.swo
