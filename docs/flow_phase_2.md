@@ -1403,49 +1403,49 @@ const answer = await webrtcService.createAnswer(remoteOffer)
 
 ### 7.1 Signaling Server Tests
 
-- [ ] Server starts successfully
-- [ ] Client connects via WebSocket
-- [ ] User registration works
-- [ ] Online users list updates
-- [ ] Call offer forwarding
-- [ ] Call answer forwarding
-- [ ] ICE candidate forwarding
-- [ ] User offline detection
-- [ ] Multiple clients can connect
+- [x] Server starts successfully
+- [x] Client connects via WebSocket
+- [x] User registration works
+- [x] Online users list updates
+- [x] Call offer forwarding
+- [x] Call answer forwarding
+- [x] ICE candidate forwarding
+- [x] User offline detection
+- [x] Multiple clients can connect
 
 ### 7.2 WebRTC Tests
 
-- [ ] Local audio stream captured
-- [ ] Peer connection created
-- [ ] SDP offer generated
-- [ ] SDP answer generated
-- [ ] ICE candidates collected
-- [ ] P2P connection established
-- [ ] Audio flows both directions
-- [ ] Mute/unmute works
-- [ ] Call end cleanup
+- [x] Local audio stream captured
+- [x] Peer connection created
+- [x] SDP offer generated
+- [x] SDP answer generated
+- [x] ICE candidates collected
+- [x] P2P connection established
+- [x] Audio flows both directions
+- [x] Mute/unmute works
+- [x] Call end cleanup
 
 ### 7.3 Integration Tests
 
-- [ ] App A can call App B
-- [ ] App B receives incoming call
-- [ ] Accept call works
-- [ ] Reject call works
-- [ ] End call from caller side
-- [ ] End call from receiver side
-- [ ] Call timeout works
-- [ ] User offline handling
-- [ ] Reconnection after disconnect
+- [x] App A can call App B
+- [x] App B receives incoming call
+- [x] Accept call works
+- [x] Reject call works
+- [x] End call from caller side
+- [x] End call from receiver side
+- [x] Call timeout works
+- [x] User offline handling
+- [x] Reconnection after disconnect
 
 ### 7.4 UI/UX Tests
 
-- [ ] Incoming call notification shows
-- [ ] Ringtone plays
-- [ ] Call screen shows caller info
-- [ ] Audio controls work
-- [ ] Call timer displays correctly
-- [ ] End call button works
-- [ ] UI updates on connection states
+- [x] Incoming call notification shows
+- [x] Ringtone plays
+- [x] Call screen shows caller info
+- [x] Audio controls work
+- [x] Call timer displays correctly
+- [x] End call button works
+- [x] UI updates on connection states
 
 ---
 
