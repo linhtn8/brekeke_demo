@@ -1,0 +1,4 @@
+Uncaught runtime errors:
+×
+ERROR
+Cannot read properties of undefined (reading 'getUserMedia') TypeError: Cannot read properties of undefined (reading 'getUserMedia')     at ./src/polyfill/index.web.ts (http://172.65.1.240:3000/static/js/bundle.js:168806:96)     at options.factory (http://172.65.1.240:3000/static/js/bundle.js:187638:30)     at __webpack_require__ (http://172.65.1.240:3000/static/js/bundle.js:187066:32)     at fn (http://172.65.1.240:3000/static/js/bundle.js:187266:21)     at hotRequire (http://172.65.1.240:3000/static/js/bundle.js:187621:58)     at ./src/index.ts (http://172.65.1.240:3000/static/js/bundle.js:160783:1)     at options.factory (http://172.65.1.240:3000/static/js/bundle.js:187638:30)     at __webpack_require__ (http://172.65.1.240:3000/static/js/bundle.js:187066:32)     at http://172.65.1.240:3000/static/js/bundle.js:188162:37     at http://172.65.1.240:3000/static/js/bundle.js:188164:12
