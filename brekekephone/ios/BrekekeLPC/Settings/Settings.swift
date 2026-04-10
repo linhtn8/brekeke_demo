@@ -1,0 +1,47 @@
+import Foundation
+
+public struct Settings: Codable, Equatable {
+  struct PushManagerSettings: Codable, Equatable {
+    var host = ""
+    var port: UInt16 = 3000 // default port
+    var tlsKeyHash = ""
+    var localSsids: [String] = []
+    var remoteSsids: [String] = []
+
+    var mobileCountryCode = ""
+    var mobileNetworkCode = ""
+    var trackingAreaCode = ""
+
+    var enabled = true
+  }
+
+  static var bundleIdentifier = "com.brekeke.phonedev"
+  static var lpcBundleIdentifier = "group.com.brekeke.lpcdev"
+
+  var pushManagerSettings = PushManagerSettings()
+  var token: String
+  var tokenVoip: String
+  var username: String
+}
+
+extension Settings {
+  var user: User {
+    User(token: token, tokenVoip: tokenVoip, username: username)
+  }
+}
+
+extension Settings.PushManagerSettings {
+  // convenience function that determines if the pushManagerSettings model has
+  // any valid configuration properties set. A valid configuration
+  // includes both a host value and an SSID or private LTE network configuration
+  var isEmpty: Bool {
+    if host.isEmpty {
+      return true
+    }
+    if localSsids.isEmpty, remoteSsids.isEmpty, mobileCountryCode
+      .isEmpty || mobileNetworkCode.isEmpty {
+      return true
+    }
+    return false
+  }
+}
