@@ -131,3 +131,49 @@ Bước 4: Chạy ứng dụng trên giả lập
       yarn android
    
 Khi quá trình build Gradle hoàn tất (thường mất 2-3 phút cho lần đầu tiên), ứng dụng BAP Demo màu xanh dương sẽ bật lên trên giả lập Android của bạn. Hệ thống WebRTC sẽ hoạt động cực kỳ mượt mà trên nền tảng này!
+
+## iOS (Máy ảo / Simulator)
+Vì bạn đã cài đặt sẵn Xcode, việc chạy ứng dụng trên giả lập iOS (Simulator) sẽ rất thuận tiện. Hãy làm theo các bước sau:
+
+**Bước 1: Cài đặt công cụ dòng lệnh (Command Line Tools) cho Xcode**
+1. Mở **Xcode**.
+2. Chọn menu **Xcode > Settings** (hoặc Preferences) > chuyển sang tab **Locations**.
+3. Ở mục **Command Line Tools**, hãy đảm bảo bạn đã chọn phiên bản Xcode hiện tại (không để trống).
+
+**Bước 2: Cài đặt CocoaPods (Trình quản lý gói thư viện cho iOS)**
+Nếu máy bạn chưa có CocoaPods, hãy mở Terminal và chạy lệnh sau (có thể cần nhập mật khẩu máy Mac):
+```bash
+sudo gem install cocoapods
+```
+*Lưu ý: Nếu dùng máy Mac chip M1/M2/M3, bạn cũng có thể cài qua Homebrew bằng lệnh `brew install cocoapods`.*
+
+**Bước 3: Cài đặt các gói thư viện Native iOS (Pods)**
+1. Mở Terminal và di chuyển vào thư mục `ios` của dự án:
+   ```bash
+   cd brekekephone/ios
+   ```
+2. Chạy lệnh cài đặt Pods:
+   ```bash
+   pod install
+   ```
+   *Mẹo: Nếu gặp lỗi trên chip Apple Silicon (M1/M2/M3), hãy thử chạy lệnh `arch -x86_64 pod install`.*
+3. Sau khi cài đặt xong, quay lại thư mục gốc của app:
+   ```bash
+   cd ..
+   ```
+
+**Bước 4: Chạy ứng dụng trên giả lập iOS**
+1. Xóa cache cũ cho chắc chắn (nếu cần):
+   ```bash
+   yarn rn --reset-cache
+   ```
+2. Mở một Tab Terminal khác, chạy lệnh sau để build và mở app trên giả lập iOS:
+   ```bash
+   yarn ios
+   ```
+   
+Lệnh này sẽ tự động khởi chạy ứng dụng iOS Simulator (ví dụ: iPhone 15 Pro) và cài đặt BAP Demo App lên đó. Nếu bạn muốn chỉ định một thiết bị giả lập cụ thể, bạn có thể thêm cờ `--simulator`, ví dụ:
+```bash
+yarn ios --simulator="iPhone 15 Pro"
+```
+Quá trình build lần đầu có thể mất vài phút. Sau đó ứng dụng sẽ tự động mở ra trên máy ảo!

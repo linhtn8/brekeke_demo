@@ -76,7 +76,7 @@ export class SignalingService {
    * @param userId User's phone number/ID
    * @param userName User's display name
    */
-  connect(serverUrl: string, userId: string, userName?: string): Promise<void> {
+  connect(serverUrl: string, userId: string, userName?: string, apnsToken?: string): Promise<void> {
     return new Promise((resolve, reject) => {
       try {
         console.log(`[Signaling] Connecting to ${serverUrl}...`)
@@ -99,6 +99,7 @@ export class SignalingService {
             type: 'register',
             userId,
             userName,
+            apnsToken,
           })
 
           resolve()

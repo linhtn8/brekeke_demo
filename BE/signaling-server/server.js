@@ -1,10 +1,26 @@
 const WebSocket = require('ws');
+const fs = require('fs');
+
+// FEATURE FLAG CHO PHASE 3
+const ENABLE_PUSH_NOTIFICATIONS = false;
+
+// Only require 'apn' if feature flag is true, to prevent errors if apn is not installed or configured
+let apn = null;
+if (ENABLE_PUSH_NOTIFICATIONS) {
+  try {
+    apn = require('apn');
+  } catch (e) {
+    console.error('⚠️ [Feature Flag] apn module not found. Push Notifications will be disabled.');
+  }
+}
 
 // Configuration
 const PORT = process.env.PORT || 8080;
 
 // Store connected users: { userId: WebSocket }
 const users = new Map();
+// Store user APNs tokens: { userId: apnsToken }
+const userTokens = new Map();
 
 // Create WebSocket server
 const wss = new WebSocket.Server({ port: PORT });
@@ -14,8 +30,79 @@ console.log(`📡 WebSocket endpoint: ws://localhost:${PORT}`);
 console.log('─'.repeat(50));
 
 // ============================================
+// APNs (Apple Push Notification) Setup
+// ============================================
+let apnProvider = null;
+
+if (ENABLE_PUSH_NOTIFICATIONS && apn) {
+  try {
+    // TODO: Replace with actual Team ID, Key ID, and Auth Key path
+    const options = {
+      token: {
+        key: './AuthKey_placeholder.p8', // Path to .p8 file
+        keyId: 'PLACEHOLDER_KEY_ID',     // 10-character Key ID
+        teamId: 'PLACEHOLDER_TEAM_ID'    // 10-character Team ID
+      },
+      production: false // true for production, false for development
+    };
+
+    if (fs.existsSync(options.token.key)) {
+      apnProvider = new apn.Provider(options);
+      console.log('🍏 APNs Provider initialized successfully.');
+    } else {
+      console.log('⚠️ APNs Auth Key (.p8) not found. VoIP Push will be disabled.');
+      console.log('   -> Please update the .p8 file path and IDs in server.js');
+    }
+  } catch (err) {
+    console.error('❌ Failed to initialize APNs Provider:', err.message);
+  }
+} else {
+  console.log('ℹ️ [Feature Flag] Push Notifications are DISABLED. Flow Phase 2 is unaffected.');
+}
+
+// ============================================
 // Helper Functions
 // ============================================
+
+/**
+ * Send VoIP Push Notification
+ */
+function sendVoIPPush(userId, callerId, callerName) {
+  if (!ENABLE_PUSH_NOTIFICATIONS) return false;
+
+  if (!apnProvider) {
+    log(`⚠️ Cannot send VoIP push to ${userId}: APNs Provider not configured.`);
+    return false;
+  }
+
+  const token = userTokens.get(userId);
+  if (!token) {
+    log(`⚠️ Cannot send VoIP push to ${userId}: No APNs token registered.`);
+    return false;
+  }
+
+  const notification = new apn.Notification();
+  notification.topic = 'com.bap.brekekephone.voip'; // Must match your bundle ID + .voip
+  notification.payload = {
+    uuid: `call-${Date.now()}-${callerId}`,
+    callerName: callerName || callerId,
+    callerId: callerId,
+    hasVideo: false
+  };
+
+  apnProvider.send(notification, token).then((result) => {
+    if (result.sent.length > 0) {
+      log(`🍏✅ VoIP Push successfully sent to ${userId}`);
+    }
+    if (result.failed.length > 0) {
+      result.failed.forEach(failure => {
+        log(`🍏❌ VoIP Push failed to ${userId}: ${failure.error?.message || failure.response?.reason}`);
+      });
+    }
+  });
+
+  return true;
+}
 
 /**
  * Send message to specific user
@@ -84,6 +171,11 @@ wss.on('connection', (ws) => {
           currentUserId = message.userId;
           users.set(currentUserId, ws);
           
+          if (ENABLE_PUSH_NOTIFICATIONS && message.apnsToken) {
+            userTokens.set(currentUserId, message.apnsToken);
+            log(`🍏 APNs token registered for ${currentUserId}`);
+          }
+          
           log(`✅ User registered: ${currentUserId} (${message.userName || 'No name'})`);
           log(`📊 Online users (${users.size}): ${getOnlineUsers().join(', ')}`);
           
@@ -112,18 +204,36 @@ wss.on('connection', (ws) => {
           
           log(`📞 Call offer: ${currentUserId} → ${receiver}`);
           
-          // Check if receiver is online
+          // Check if receiver is online via WebSocket
           if (!users.has(receiver)) {
-            log(`❌ Receiver offline: ${receiver}`);
-            ws.send(JSON.stringify({
-              type: 'user-offline',
-              userId: receiver,
-              timestamp: Date.now(),
-            }));
+            if (ENABLE_PUSH_NOTIFICATIONS) {
+              log(`⚠️ Receiver offline: ${receiver}. Attempting to wake via VoIP Push...`);
+              
+              // Attempt to send VoIP Push
+              const pushed = sendVoIPPush(receiver, currentUserId, callerName);
+              
+              if (pushed) {
+                log(`⏳ Waiting for ${receiver} to wake up and reconnect...`);
+              } else {
+                ws.send(JSON.stringify({
+                  type: 'user-offline',
+                  userId: receiver,
+                  timestamp: Date.now(),
+                }));
+              }
+            } else {
+              // Standard Phase 2 flow: User is offline
+              log(`❌ Receiver offline: ${receiver}`);
+              ws.send(JSON.stringify({
+                type: 'user-offline',
+                userId: receiver,
+                timestamp: Date.now(),
+              }));
+            }
             return;
           }
           
-          // Forward offer to receiver
+          // Forward offer to receiver (they are online via WS)
           const sent = sendToUser(receiver, {
             type: 'incoming-call',
             from: currentUserId,
@@ -278,6 +388,10 @@ process.on('SIGINT', () => {
       ws.close();
     }
   });
+  
+  if (ENABLE_PUSH_NOTIFICATIONS && apnProvider) {
+    apnProvider.shutdown();
+  }
   
   wss.close(() => {
     console.log('✅ Server closed successfully');

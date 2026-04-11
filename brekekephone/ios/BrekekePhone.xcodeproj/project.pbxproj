@@ -682,7 +682,7 @@
 					"-ObjC",
 					"-lc++",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = com.brekeke.phonedev;
+				PRODUCT_BUNDLE_IDENTIFIER = com.bap.phone;
 				PRODUCT_NAME = "Brekeke Phone Dev";
 				PROVISIONING_PROFILE_SPECIFIER = phonedev;
 				"PROVISIONING_PROFILE_SPECIFIER[sdk=iphoneos*]" = phonedev;
@@ -718,7 +718,7 @@
 					"-ObjC",
 					"-lc++",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = com.brekeke.phonedev;
+				PRODUCT_BUNDLE_IDENTIFIER = com.bap.phone;
 				PRODUCT_NAME = "Brekeke Phone Dev";
 				PROVISIONING_PROFILE_SPECIFIER = phonedev;
 				"PROVISIONING_PROFILE_SPECIFIER[sdk=iphoneos*]" = phonedev;
@@ -893,7 +893,7 @@
 				MARKETING_VERSION = 2.17.0;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
-				PRODUCT_BUNDLE_IDENTIFIER = com.brekeke.phonedev.BrekekeLPCExtension;
+				PRODUCT_BUNDLE_IDENTIFIER = com.bap.phone.BrekekeLPCExtension;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "phonedev-LPCExtension";
 				"PROVISIONING_PROFILE_SPECIFIER[sdk=iphoneos*]" = "phonedev-LPCExtension";
@@ -934,7 +934,7 @@
 				LIBRARY_SEARCH_PATHS = "$(SDKROOT)/usr/lib/swift$(inherited)";
 				MARKETING_VERSION = 2.17.0;
 				MTL_FAST_MATH = YES;
-				PRODUCT_BUNDLE_IDENTIFIER = com.brekeke.phonedev.BrekekeLPCExtension;
+				PRODUCT_BUNDLE_IDENTIFIER = com.bap.phone.BrekekeLPCExtension;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "phonedev-LPCExtension";
 				"PROVISIONING_PROFILE_SPECIFIER[sdk=iphoneos*]" = "phonedev-LPCExtension";

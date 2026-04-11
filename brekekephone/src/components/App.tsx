@@ -315,13 +315,6 @@ const css = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  DemoLogoFooter: {
-    position: 'absolute',
-    bottom: 20,
-    right: 20,
-    opacity: 0.6,
-    zIndex: 9999,
-  },
 })
 
 export const App = observer(() => {
@@ -390,13 +383,6 @@ export const App = observer(() => {
       {!ctx.account.appInitDone && (
         <View style={css.LoadingFullscreen}>
           <ActivityIndicator size='large' color='white' />
-        </View>
-      )}
-
-      {/* Demo mode: BAP logo in bottom right corner */}
-      {DEMO_MODE && ctx.auth.signedInId && (
-        <View style={css.DemoLogoFooter} pointerEvents='none'>
-          <BapLogo size={60} />
         </View>
       )}
     </RootView>
