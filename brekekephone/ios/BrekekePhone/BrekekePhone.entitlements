@@ -4,6 +4,8 @@
 <dict>
 	<key>aps-environment</key>
 	<string>production</string>
+	<key>com.apple.developer.background-tasks.continued-processing.gpu</key>
+	<true/>
 	<key>com.apple.developer.icloud-container-identifiers</key>
 	<array>
 		<string>iCloud.$(CFBundleIdentifier)</string>
@@ -12,7 +14,6 @@
 	<array>
 		<string>CloudDocuments</string>
 	</array>
-	<key>com.apple.developer.networking.networkextension</key>
 	<array>
 		<string>app-push-provider</string>
 	</array>
@@ -25,12 +26,10 @@
 	<key>com.apple.developer.ubiquity-kvstore-identifier</key>
 	<string>$(TeamIdentifierPrefix)$(CFBundleIdentifier)</string>
 	<key>com.apple.security.application-groups</key>
-	<array>
-		<string>group.com.brekeke.lpcdev</string>
-	</array>
+	<array/>
 	<key>keychain-access-groups</key>
 	<array>
-		<string>$(AppIdentifierPrefix)com.brekeke.phonedev</string>
+		<string>$(AppIdentifierPrefix)com.bap.phone</string>
 	</array>
 </dict>
 </plist>

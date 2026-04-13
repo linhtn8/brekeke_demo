@@ -58,9 +58,6 @@ export const DEMO_CONTACTS: DemoContact[] = [
   { id: '8', name: 'Sales', phone: '500' },
 ]
 
-
-
-
 // ============================================
 // DEMO CALL SETTINGS
 // ============================================
@@ -103,19 +100,22 @@ export const DEMO_BRANDING = {
 }
 
 // Load logo statically since it exists now
-const logo = require('../assets/bap-logo.png');
-DEMO_BRANDING.logoPath = logo.default || logo;
+const logo = require('../assets/bap-logo.png')
+
+DEMO_BRANDING.logoPath = logo.default || logo
 
 // ============================================
 // PHASE 2 - WEBRTC CONFIGURATION
 // ============================================
 export const PHASE_2_ENABLED = true // Toggle Phase 2 (WebRTC real calling)
+export const PHASE_3_ENABLED = true // Toggle Phase 3 (Push Notifications + CallKit)
 
 export const WEBRTC_CONFIG = {
   // Signaling server URL
   // Replace with your local IP if testing on physical devices (e.g. 'ws://192.168.1.10:8080')
-  // signalingServerUrl: 'ws://localhost:8080',
-  signalingServerUrl: 'ws://172.65.1.240:8080',
+  // signalingServerUrl: 'ws://localhost:8080', 172.65.1.240
+  // signalingServerUrl: 'ws://192.168.1.11:8080',
+  signalingServerUrl: 'ws://localhost:8080',
   // signalingServerUrl: 'wss://salty-squids-brake.loca.lt',
 
   // STUN servers for NAT traversal

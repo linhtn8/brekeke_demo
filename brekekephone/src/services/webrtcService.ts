@@ -13,7 +13,12 @@
 
 import { Platform } from 'react-native'
 
-let mediaDevices: any, RTCPeerConnection: any, RTCSessionDescription: any, RTCIceCandidate: any, MediaStream: any, RTCView: any
+let mediaDevices: any
+let RTCPeerConnection: any
+let RTCSessionDescription: any
+let RTCIceCandidate: any
+let MediaStream: any
+let RTCView: any
 
 if (Platform.OS !== 'web') {
   const webrtc = require('react-native-webrtc')
@@ -24,16 +29,16 @@ if (Platform.OS !== 'web') {
   MediaStream = webrtc.MediaStream
   RTCView = webrtc.RTCView
 } else {
-  const win = typeof window !== 'undefined' ? window as any : {}
-  const nav = typeof navigator !== 'undefined' ? navigator : {} as any
+  const win = typeof window !== 'undefined' ? (window as any) : {}
+  const nav = typeof navigator !== 'undefined' ? navigator : ({} as any)
   mediaDevices = nav.mediaDevices
   RTCPeerConnection = win.RTCPeerConnection || win.webkitRTCPeerConnection
-  RTCSessionDescription = win.RTCSessionDescription || win.webkitRTCSessionDescription
+  RTCSessionDescription =
+    win.RTCSessionDescription || win.webkitRTCSessionDescription
   RTCIceCandidate = win.RTCIceCandidate || win.webkitRTCIceCandidate
   MediaStream = win.MediaStream || win.webkitMediaStream
   RTCView = () => null
 }
-
 
 // ============================================
 // Type Definitions
@@ -284,9 +289,7 @@ export class WebRTCService {
    * @param offer Remote SDP offer
    * @returns Promise<any> SDP answer
    */
-  async createAnswer(
-    offer: any,
-  ): Promise<any> {
+  async createAnswer(offer: any): Promise<any> {
     if (!this.peerConnection) {
       throw new Error('Peer connection not initialized')
     }

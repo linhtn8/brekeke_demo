@@ -1,7 +1,7 @@
 import EventEmitter from 'eventemitter3'
 
 import { getCameraSourceIds } from '#/api/getCameraSourceId'
-import turnConfig from "#/api/turnConfig"
+import turnConfig from '#/api/turnConfig'
 import type { CallOptions, Session, Sip } from '#/brekekejs'
 import { isWeb } from '#/config'
 import { embedApi } from '#/embed/embedApi'
