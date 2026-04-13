@@ -2,7 +2,7 @@ const WebSocket = require('ws');
 const fs = require('fs');
 
 // FEATURE FLAG CHO PHASE 3
-const ENABLE_PUSH_NOTIFICATIONS = false;
+const ENABLE_PUSH_NOTIFICATIONS = true;
 
 // Only require 'apn' if feature flag is true, to prevent errors if apn is not installed or configured
 let apn = null;
@@ -21,6 +21,8 @@ const PORT = process.env.PORT || 8080;
 const users = new Map();
 // Store user APNs tokens: { userId: apnsToken }
 const userTokens = new Map();
+// Store active calls to handle timeouts and cancelations: { receiverId: { uuid, callerId, timeout, offer, callerName } }
+const activeCalls = new Map();
 
 // Create WebSocket server
 const wss = new WebSocket.Server({ port: PORT });
@@ -39,9 +41,9 @@ if (ENABLE_PUSH_NOTIFICATIONS && apn) {
     // TODO: Replace with actual Team ID, Key ID, and Auth Key path
     const options = {
       token: {
-        key: './AuthKey_placeholder.p8', // Path to .p8 file
-        keyId: 'PLACEHOLDER_KEY_ID',     // 10-character Key ID
-        teamId: 'PLACEHOLDER_TEAM_ID'    // 10-character Team ID
+        key: './certs/AuthKey_L293HL7P3R.p8', // Path to .p8 file
+        keyId: 'L293HL7P3R',     // 10-character Key ID
+        teamId: 'SUG49M587C'    // 10-character Team ID
       },
       production: false // true for production, false for development
     };
@@ -67,7 +69,7 @@ if (ENABLE_PUSH_NOTIFICATIONS && apn) {
 /**
  * Send VoIP Push Notification
  */
-function sendVoIPPush(userId, callerId, callerName) {
+function sendVoIPPush(userId, callerId, callerName, isCancel = false, callUuid = null) {
   if (!ENABLE_PUSH_NOTIFICATIONS) return false;
 
   if (!apnProvider) {
@@ -82,17 +84,18 @@ function sendVoIPPush(userId, callerId, callerName) {
   }
 
   const notification = new apn.Notification();
-  notification.topic = 'com.bap.brekekephone.voip'; // Must match your bundle ID + .voip
+  notification.topic = 'com.bap.phone.voip'; // Must match your bundle ID + .voip
   notification.payload = {
-    uuid: `call-${Date.now()}-${callerId}`,
+    uuid: callUuid || require('uuid').v4(), // Use existing UUID for cancel, or generate new
     callerName: callerName || callerId,
     callerId: callerId,
-    hasVideo: false
+    hasVideo: false,
+    type: isCancel ? 'call-cancel' : 'call-offer'
   };
 
   apnProvider.send(notification, token).then((result) => {
     if (result.sent.length > 0) {
-      log(`🍏✅ VoIP Push successfully sent to ${userId}`);
+      log(`🍏✅ VoIP Push (${isCancel ? 'CANCEL' : 'OFFER'}) successfully sent to ${userId}`);
     }
     if (result.failed.length > 0) {
       result.failed.forEach(failure => {
@@ -101,7 +104,19 @@ function sendVoIPPush(userId, callerId, callerName) {
     }
   });
 
-  return true;
+  return notification.payload.uuid;
+}
+
+/**
+ * Clear call timeout if answered/rejected/ended
+ */
+function clearCallTimeout(receiverId) {
+  if (activeCalls.has(receiverId)) {
+    const callData = activeCalls.get(receiverId);
+    clearTimeout(callData.timeout);
+    activeCalls.delete(receiverId);
+    log(`⏱️ Call timeout cleared for ${receiverId}`);
+  }
 }
 
 /**
@@ -187,6 +202,23 @@ wss.on('connection', (ws) => {
             timestamp: Date.now(),
           }));
           
+          // Check for pending calls
+          if (activeCalls.has(currentUserId)) {
+            const pending = activeCalls.get(currentUserId);
+            if (pending.offer) {
+              log(`🔄 Sending pending call offer to newly registered ${currentUserId}`);
+              sendToUser(currentUserId, {
+                type: 'incoming-call',
+                from: pending.callerId,
+                fromName: pending.callerName,
+                offer: pending.offer,
+                uuid: pending.uuid,
+                timestamp: Date.now(),
+              });
+              // We don't delete from activeCalls yet, let the 30s timeout or clearCallTimeout handle it
+            }
+          }
+
           // Notify others
           broadcastExcept(currentUserId, {
             type: 'user-online',
@@ -199,10 +231,37 @@ wss.on('connection', (ws) => {
         // ============================================
         // CALL OFFER
         // ============================================
-        case 'call-offer':
+        case 'call-offer': {
           const { to: receiver, offer, callerName } = message;
           
           log(`📞 Call offer: ${currentUserId} → ${receiver}`);
+          
+          // Always generate a UUID for the call so we can cancel it later via Push if needed
+          let callUuid = null;
+
+          // Timeout Handler setup (30s)
+            const setupCallTimeout = (uuid, callerId, callerName, offer = null) => {
+            const timeout = setTimeout(() => {
+              log(`⏳ Timeout reached for call: ${callerId} → ${receiver}`);
+              activeCalls.delete(receiver);
+              
+              // Tell caller that the receiver didn't answer
+              sendToUser(callerId, {
+                type: 'call-timeout',
+                to: receiver,
+                message: 'No answer',
+                timestamp: Date.now()
+              });
+
+              // Send VoIP Push to CANCEL the call on receiver's CallKit UI
+              if (ENABLE_PUSH_NOTIFICATIONS && userTokens.has(receiver)) {
+                log(`🍏 Sending Cancel Push to ${receiver} to close CallKit UI`);
+                sendVoIPPush(receiver, callerId, callerName, true, uuid);
+              }
+            }, 30000); // 30 seconds
+
+            activeCalls.set(receiver, { uuid, callerId, callerName, offer, timeout });
+          };
           
           // Check if receiver is online via WebSocket
           if (!users.has(receiver)) {
@@ -210,10 +269,12 @@ wss.on('connection', (ws) => {
               log(`⚠️ Receiver offline: ${receiver}. Attempting to wake via VoIP Push...`);
               
               // Attempt to send VoIP Push
-              const pushed = sendVoIPPush(receiver, currentUserId, callerName);
+              callUuid = sendVoIPPush(receiver, currentUserId, callerName);
               
-              if (pushed) {
+              if (callUuid) {
                 log(`⏳ Waiting for ${receiver} to wake up and reconnect...`);
+                // Save offer to send when receiver reconnects
+                setupCallTimeout(callUuid, currentUserId, callerName, offer);
               } else {
                 ws.send(JSON.stringify({
                   type: 'user-offline',
@@ -230,15 +291,19 @@ wss.on('connection', (ws) => {
                 timestamp: Date.now(),
               }));
             }
-            return;
+            break;
           }
           
           // Forward offer to receiver (they are online via WS)
+          // We still create a UUID to track the timeout just in case they don't answer WS either
+          callUuid = require('uuid').v4();
+          
           const sent = sendToUser(receiver, {
             type: 'incoming-call',
             from: currentUserId,
             fromName: callerName,
             offer,
+            uuid: callUuid,
             timestamp: Date.now(),
           });
           
@@ -252,14 +317,17 @@ wss.on('connection', (ws) => {
             }));
           } else {
             log(`✅ Offer forwarded to ${receiver}`);
+            setupCallTimeout(callUuid, currentUserId, callerName, offer);
           }
           break;
+        }
 
         // ============================================
         // CALL ANSWER
         // ============================================
         case 'call-answer':
           log(`✅ Call answered: ${currentUserId} → ${message.to}`);
+          clearCallTimeout(currentUserId); // currentUserId is the receiver here
           
           const answerSent = sendToUser(message.to, {
             type: 'call-answer',
@@ -294,6 +362,7 @@ wss.on('connection', (ws) => {
         // ============================================
         case 'call-rejected':
           log(`❌ Call rejected: ${currentUserId} → ${message.to} (${message.reason || 'no reason'})`);
+          clearCallTimeout(currentUserId);
           
           sendToUser(message.to, {
             type: 'call-rejected',
@@ -309,6 +378,19 @@ wss.on('connection', (ws) => {
         case 'call-ended':
           log(`📴 Call ended: ${currentUserId} → ${message.to}`);
           
+          // Also send a cancel push just in case the receiver is offline and we just rang them
+          if (ENABLE_PUSH_NOTIFICATIONS && activeCalls.has(message.to)) {
+             const callData = activeCalls.get(message.to);
+             if (callData.callerId === currentUserId) {
+                log(`🍏 Sending Cancel Push to ${message.to} because caller ended call early`);
+                sendVoIPPush(message.to, currentUserId, null, true, callData.uuid);
+             }
+          }
+
+          // message.to is the receiver if caller ends it, or currentUserId if receiver ends it
+          clearCallTimeout(message.to);
+          clearCallTimeout(currentUserId);
+
           sendToUser(message.to, {
             type: 'call-ended',
             from: currentUserId,
@@ -343,6 +425,7 @@ wss.on('connection', (ws) => {
     if (currentUserId) {
       log(`👋 User disconnected: ${currentUserId}`);
       users.delete(currentUserId);
+      userTokens.delete(currentUserId); // Cleanup APNs token to avoid memory leak
       
       // Notify others
       broadcastExcept(currentUserId, {

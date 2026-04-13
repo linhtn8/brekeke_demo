@@ -127,7 +127,8 @@ class DemoStore {
    */
   @action endMockCall = () => {
     if (PHASE_2_ENABLED) {
-      ctx.webrtc.endCall(); return
+      ctx.webrtc.endCall()
+      return
     }
 
     console.log('[DemoStore] Ending mock call')
@@ -190,7 +191,10 @@ class DemoStore {
   /**
    * Demo login - simulates authentication with loading delay
    */
-  @action login = async (username: string = 'demo', onComplete?: () => void) => {
+  @action login = async (
+    username: string = 'demo',
+    onComplete?: () => void,
+  ) => {
     if (!DEMO_MODE) {
       return
     }
@@ -222,11 +226,15 @@ class DemoStore {
         if (PHASE_2_ENABLED) {
           // Use the entered username as the WebRTC ID so we can differentiate users
           const userId = username || ctx.auth.signedInId || 'demo'
-          
+
           // Try to find a matching contact name, or default to standard label
-          const matchedContact = DEMO_CONTACTS.find(c => c.phone === userId || c.id === userId)
-          const userNameLabel = matchedContact ? matchedContact.name : `Demo User ${userId}`
-          
+          const matchedContact = DEMO_CONTACTS.find(
+            c => c.phone === userId || c.id === userId,
+          )
+          const userNameLabel = matchedContact
+            ? matchedContact.name
+            : `Demo User ${userId}`
+
           ctx.webrtc.connect(userId, userNameLabel)
         }
 

@@ -97,7 +97,9 @@ const css = StyleSheet.create({
 })
 
 export const App = () => {
-  const [isBrowser, setIsBrowser] = useState(DEMO_MODE || (!isIOS && !isAndroid))
+  const [isBrowser, setIsBrowser] = useState(
+    DEMO_MODE || (!isIOS && !isAndroid),
+  )
   let child: ReactElement | null = null
   if (isBrowser) {
     child = <RnApp />

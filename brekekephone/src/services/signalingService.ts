@@ -5,7 +5,6 @@
  * Manages signaling messages (SDP, ICE candidates, call events)
  */
 
-
 // ============================================
 // Type Definitions
 // ============================================
@@ -24,15 +23,9 @@ export interface SignalingCallbacks {
     offer: any
   }) => void
   /** Called when call is answered */
-  onCallAnswer?: (data: {
-    from: string
-    answer: any
-  }) => void
+  onCallAnswer?: (data: { from: string; answer: any }) => void
   /** Called when ICE candidate is received */
-  onIceCandidate?: (data: {
-    from: string
-    candidate: any
-  }) => void
+  onIceCandidate?: (data: { from: string; candidate: any }) => void
   /** Called when call is rejected */
   onCallRejected?: (data: { from: string; reason?: string }) => void
   /** Called when call is ended */
@@ -55,12 +48,21 @@ export class SignalingService {
   private currentUserId: string | null = null
   private currentUserName?: string
   private serverUrl: string = ''
+  private apnsToken?: string
 
   // Reconnection logic
   private reconnectAttempts = 0
   private maxReconnectAttempts = 5
   private reconnectTimer: ReturnType<typeof setTimeout> | null = null
   private intentionalDisconnect = false
+
+  /**
+   * Set APNs token for iOS Push Notifications
+   */
+  setApnsToken(token: string): void {
+    this.apnsToken = token
+    console.log('[Signaling] APNs token stored')
+  }
 
   /**
    * Initialize signaling service with callbacks
@@ -76,7 +78,12 @@ export class SignalingService {
    * @param userId User's phone number/ID
    * @param userName User's display name
    */
-  connect(serverUrl: string, userId: string, userName?: string, apnsToken?: string): Promise<void> {
+  connect(
+    serverUrl: string,
+    userId: string,
+    userName?: string,
+    apnsToken?: string,
+  ): Promise<void> {
     return new Promise((resolve, reject) => {
       try {
         console.log(`[Signaling] Connecting to ${serverUrl}...`)
@@ -99,7 +106,7 @@ export class SignalingService {
             type: 'register',
             userId,
             userName,
-            apnsToken,
+            apnsToken: apnsToken || this.apnsToken,
           })
 
           resolve()
@@ -290,11 +297,7 @@ export class SignalingService {
    * @param offer SDP offer
    * @param callerName Optional caller display name
    */
-  sendCallOffer(
-    to: string,
-    offer: any,
-    callerName?: string,
-  ): void {
+  sendCallOffer(to: string, offer: any, callerName?: string): void {
     console.log(`[Signaling] 📤 Sending call offer to ${to}`)
     this.send({
       type: 'call-offer',
