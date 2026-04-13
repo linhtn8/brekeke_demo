@@ -174,6 +174,6 @@ sudo gem install cocoapods
    
 Lệnh này sẽ tự động khởi chạy ứng dụng iOS Simulator (ví dụ: iPhone 15 Pro) và cài đặt BAP Demo App lên đó. Nếu bạn muốn chỉ định một thiết bị giả lập cụ thể, bạn có thể thêm cờ `--simulator`, ví dụ:
 ```bash
-yarn ios --simulator="iPhone 15 Pro"
+yarn ios --simulator="iPhone 11 Pro Max" 
 ```
 Quá trình build lần đầu có thể mất vài phút. Sau đó ứng dụng sẽ tự động mở ra trên máy ảo!

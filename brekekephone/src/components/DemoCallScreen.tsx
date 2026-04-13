@@ -233,13 +233,16 @@ export const DemoCallScreen = observer(() => {
         )}
 
         {/* Remote audio stream for Phase 2 WebRTC */}
-        {PHASE_2_ENABLED && ctx.webrtc.remoteStream && (
-          Platform.OS === 'web' ? (
+        {PHASE_2_ENABLED &&
+          ctx.webrtc.remoteStream &&
+          (Platform.OS === 'web' ? (
             <WebAudio stream={ctx.webrtc.remoteStream} />
           ) : (
-            <RTCView streamURL={ctx.webrtc.remoteStream?.toURL?.() || ''} style={{ width: 0, height: 0 }} />
-          )
-        )}
+            <RTCView
+              streamURL={ctx.webrtc.remoteStream?.toURL?.() || ''}
+              style={{ width: 0, height: 0 }}
+            />
+          ))}
 
         {/* Hangup Button */}
         <View style={css.hangupButton}>

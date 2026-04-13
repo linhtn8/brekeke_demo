@@ -62,14 +62,14 @@ Tài liệu này mô tả chi tiết flow implementation cho **Phase 3** của B
 *(Thực hiện thủ công trên Xcode và Apple Developer Portal)*
 
 - [x] **Đổi Bundle ID (iOS):** Thay đổi Bundle Identifier trong project Xcode (vd: `com.bap.brekekephone`).
-- [ ] **Apple Developer Portal:** *(Pending: Chờ User setup sau)*
-  - [ ] Đăng nhập Apple Developer, tạo App ID mới khớp với Bundle ID.
-  - [ ] Bật capabilities (Quyền): `Push Notifications`, `Voice over IP` (nếu có), `Background Modes`.
-  - [ ] Tạo Provisioning Profile cho App ID mới và tải về Xcode.
-  - [ ] Tạo file chứng chỉ `.p8` (APNs Auth Key) để dùng cho PushKit. Lưu file `.p8`, `Key ID` và `Team ID`.
-- [ ] **Xcode Capabilities:**
-  - [ ] Thêm capability `Background Modes` trong Xcode. Tích chọn: `Voice over IP`, `Audio, AirPlay, and Picture in Picture`, `Background fetch`, `Remote notifications`.
-  - [ ] Thêm capability `Push Notifications`.
+- [x] **Apple Developer Portal:** *(Completed)*
+  - [x] Đăng nhập Apple Developer, tạo App ID mới khớp với Bundle ID.
+  - [x] Bật capabilities (Quyền): `Push Notifications`, `Voice over IP` (nếu có), `Background Modes`.
+  - [x] Tạo Provisioning Profile cho App ID mới và tải về Xcode.
+  - [x] Tạo file chứng chỉ `.p8` (APNs Auth Key) để dùng cho PushKit. Lưu file `.p8`, `Key ID` và `Team ID`.
+- [x] **Xcode Capabilities:**
+  - [x] Thêm capability `Background Modes` trong Xcode. Tích chọn: `Voice over IP`, `Audio, AirPlay, and Picture in Picture`, `Background fetch`, `Remote notifications`.
+  - [x] Thêm capability `Push Notifications`.
 
 ### Phase 3.2: Signaling Server Upgrade (Backend)
 *(Nâng cấp `BE/signaling-server` để hỗ trợ bắn Apple Push)*
@@ -81,22 +81,22 @@ Tài liệu này mô tả chi tiết flow implementation cho **Phase 3** của B
 - [x] **VoIP Push Logic:**
   - [x] Khi nhận sự kiện `call-offer`, Server sẽ tìm `apnsToken` của Receiver.
   - [x] Gửi một gói tin VoIP Push qua thư viện `apn` đến máy iPhone nhận. Payload chứa thông tin cơ bản: `callerId`, `callerName`.
-- [ ] **Timeout Handling:** Nếu sau 30s không ai bắt máy, Server tiếp tục gửi một gói tin Push (hoặc WebSocket) mang lệnh huỷ để CallKit trên máy nhận tự động đóng giao diện.
+- [x] **Timeout Handling:** Nếu sau 30s không ai bắt máy, Server tiếp tục gửi một gói tin Push (hoặc WebSocket) mang lệnh huỷ để CallKit trên máy nhận tự động đóng giao diện.
 
 ### Phase 3.3: Native iOS CallKit & Push Integration (Frontend)
 *(Code trong thư mục `brekekephone/src/` và Native modules iOS)*
 
-- [ ] **Push Notifications Setup:**
-  - [ ] Cấu hình thư viện `react-native-voip-push-notification` để bắt tín hiệu PushKit trên iOS.
-  - [ ] Ngay sau khi Login thành công, gọi lệnh lấy `voipToken` từ iOS và gửi lên Signaling Server qua WebSocket.
-- [ ] **CallKeep (CallKit) Integration:**
-  - [ ] Khởi tạo cấu hình `RNCallKeep.setup()` trong `index.js` (áp dụng cho nền tảng `ios`).
-  - [ ] Bắt sự kiện nhận VoIP Push (dù app đang chạy hay bị tắt). Khi có Push, gọi lệnh `RNCallKeep.displayIncomingCall()` để iOS lập tức sáng màn hình và hiện giao diện gọi điện chuẩn.
-  - [ ] Xử lý sự kiện `RNCallKeep.addEventListener('answerCall', ...)`: Khi User bấm nút Xanh (Nghe).
-  - [ ] Xử lý sự kiện `RNCallKeep.addEventListener('endCall', ...)`: Khi User bấm nút Đỏ (Từ chối).
-- [ ] **WebRTC Background Reconnection:**
-  - [ ] Khi CallKit báo `answerCall`, App dưới nền phải lập tức tự động Connect lại WebSocket.
-  - [ ] Đợi WebSocket báo Open, gửi SDP `call-answer` trả về cho Caller và khởi tạo WebRTC (Audio Stream).
+- [x] **Push Notifications Setup:**
+  - [x] Cấu hình thư viện `react-native-voip-push-notification` để bắt tín hiệu PushKit trên iOS.
+  - [x] Ngay sau khi Login thành công, gọi lệnh lấy `voipToken` từ iOS và gửi lên Signaling Server qua WebSocket.
+- [x] **CallKeep (CallKit) Integration:**
+  - [x] Khởi tạo cấu hình `RNCallKeep.setup()` trong `index.js` (áp dụng cho nền tảng `ios`).
+  - [x] Bắt sự kiện nhận VoIP Push (dù app đang chạy hay bị tắt). Khi có Push, gọi lệnh `RNCallKeep.displayIncomingCall()` để iOS lập tức sáng màn hình và hiện giao diện gọi điện chuẩn.
+  - [x] Xử lý sự kiện `RNCallKeep.addEventListener('answerCall', ...)`: Khi User bấm nút Xanh (Nghe).
+  - [x] Xử lý sự kiện `RNCallKeep.addEventListener('endCall', ...)`: Khi User bấm nút Đỏ (Từ chối).
+- [x] **WebRTC Background Reconnection:**
+  - [x] Khi CallKit báo `answerCall`, App dưới nền phải lập tức tự động Connect lại WebSocket.
+  - [x] Đợi WebSocket báo Open, gửi SDP `call-answer` trả về cho Caller và khởi tạo WebRTC (Audio Stream).
 
 ### Phase 3.4: TestFlight Deployment & Testing
 - [ ] **Build Production:** Xuất file `.ipa` từ Xcode (Archive).

@@ -49,7 +49,11 @@ export const BapLogo: FC<BapLogoProps> = ({
   return (
     <View style={[styles.container, style]}>
       <Image
-        source={typeof DEMO_BRANDING.logoPath === 'string' ? { uri: DEMO_BRANDING.logoPath } : DEMO_BRANDING.logoPath as any}
+        source={
+          typeof DEMO_BRANDING.logoPath === 'string'
+            ? { uri: DEMO_BRANDING.logoPath }
+            : (DEMO_BRANDING.logoPath as any)
+        }
         style={{
           width: size,
           height: size,
