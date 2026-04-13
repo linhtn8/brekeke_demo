@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Tenant Admin</title>
+  <title>Tenant Detail</title>
   <style>
     :root {
       --bg: #f5efe4;
@@ -284,7 +284,10 @@
     <section class="hero">
       <div>
         <p class="tag">Admin Console</p>
-        <h1>Tenant Management</h1>
+        <h1 id="pageTitle">Tenant Detail</h1>
+      </div>
+      <div class="actions">
+        <button id="backBtn" class="ghost" type="button">Back to Tenants</button>
       </div>
     </section>
 
@@ -292,12 +295,12 @@
       <div>
         <div class="toolbar">
           <div class="stats">
-            <strong id="tenantCount">0</strong>
-            <span class="meta">tenants</span>
+            <strong id="userCount">0</strong>
+            <span class="meta">users</span>
           </div>
           <div class="actions">
             <button id="refreshBtn" class="ghost" type="button">Refresh</button>
-            <button id="createBtn" class="primary" type="button">Add Tenant</button>
+            <button id="createBtn" class="primary" type="button">Add User</button>
           </div>
         </div>
 
@@ -306,37 +309,53 @@
             <thead>
               <tr>
                 <th>No.</th>
-                <th>Tenant Name</th>
-                <th>Host Name</th>
-                <th>Port</th>
+                <th>User Name</th>
+                <th>Display Name</th>
+                <th>Phone</th>
+<!--                <th>Tenant</th>-->
+                <th>Status</th>
                 <th>Actions</th>
               </tr>
             </thead>
-            <tbody id="tenantTableBody"></tbody>
+            <tbody id="userTableBody"></tbody>
           </table>
         </div>
       </div>
 
       <aside>
-        <h2 id="formTitle">Add new Tenant</h2>
-        <form id="tenantForm" class="form-grid">
+        <h2 id="formTitle">Add new User</h2>
+        <form id="userForm" class="form-grid">
           <div class="inline">
             <div class="field">
-              <label for="tenantName">Tenant Name</label>
-              <input id="tenantName" name="tenantName" placeholder="Tenant A" required>
+              <label for="phone">Phone</label>
+              <input id="phone" name="phone" placeholder="101" required>
+            </div>
+            <div class="field">
+              <label for="tenant">Tenant</label>
+              <input id="tenant" name="tenant" placeholder="Tenant" required readonly>
             </div>
           </div>
 
           <div class="inline">
             <div class="field">
-              <label for="hostName">Host Name</label>
-              <input id="hostName" name="hostName" placeholder="pbx.example.com" required>
+              <label for="userName">User Name</label>
+              <input id="userName" name="userName" placeholder="user1" required>
             </div>
             <div class="field">
-              <label for="port">Port</label>
-              <input id="port" name="port" placeholder="8080" required>
+              <label for="password">Password</label>
+              <input id="password" name="password" placeholder="password" required>
             </div>
           </div>
+
+          <div class="field">
+            <label for="displayName">Display Name</label>
+            <input id="displayName" name="displayName" placeholder="Display Name" required>
+          </div>
+
+          <label id="isActiveWrapper" class="checkbox hidden">
+            <input id="isActive" name="isActive" type="checkbox">
+            <span>isActive</span>
+          </label>
 
           <div class="actions">
             <button id="submitBtn" class="primary" type="submit">Save</button>
@@ -350,24 +369,32 @@
 
   <script>
     const state = {
-      editingTenantId: null,
-      tenants: [],
+      tenantId: '',
+      tenantName: '',
+      editingId: null,
+      users: [],
     };
 
-    const tenantTableBody = document.getElementById('tenantTableBody');
-    const tenantCount = document.getElementById('tenantCount');
-    const form = document.getElementById('tenantForm');
+    const userTableBody = document.getElementById('userTableBody');
+    const userCount = document.getElementById('userCount');
+    const form = document.getElementById('userForm');
     const formTitle = document.getElementById('formTitle');
     const message = document.getElementById('message');
     const createBtn = document.getElementById('createBtn');
+    const backBtn = document.getElementById('backBtn');
     const refreshBtn = document.getElementById('refreshBtn');
     const resetBtn = document.getElementById('resetBtn');
     const submitBtn = document.getElementById('submitBtn');
+    const pageTitle = document.getElementById('pageTitle');
+    const tenantMeta = document.getElementById('tenantMeta');
+    const isActiveWrapper = document.getElementById('isActiveWrapper');
     const fields = {
-      tenantId: document.getElementById('tenantId'),
-      tenantName: document.getElementById('tenantName'),
-      hostName: document.getElementById('hostName'),
-      port: document.getElementById('port'),
+      userName: document.getElementById('userName'),
+      password: document.getElementById('password'),
+      displayName: document.getElementById('displayName'),
+      phone: document.getElementById('phone'),
+      tenant: document.getElementById('tenant'),
+      isActive: document.getElementById('isActive'),
     };
 
     function setMessage(text, type = '') {
@@ -377,73 +404,110 @@
 
     function getFormPayload() {
       const formData = new FormData(form);
-      return {
-        tenantName: formData.get('tenantName').trim(),
-        hostName: formData.get('hostName').trim(),
-        port: formData.get('port').trim(),
+      const payload = {
+        userName: formData.get('userName').trim(),
+        password: formData.get('password'),
+        displayName: formData.get('displayName').trim(),
+        phone: formData.get('phone').trim(),
+        tenant: state.tenantId,
       };
+
+      if (state.editingId) {
+        payload.isActive = fields.isActive.checked;
+      }
+
+      return payload;
     }
 
-    function fillForm(tenant) {
-      fields.tenantName.value = tenant.tenantName;
-      fields.hostName.value = tenant.hostName;
-      fields.port.value = tenant.port;
+    function fillForm(user) {
+      fields.userName.value = user.userName;
+      fields.userName.readOnly = true;
+      fields.password.value = user.password;
+      fields.displayName.value = user.displayName;
+      fields.phone.value = user.phone;
+      fields.tenant.value = user.tenant;
+      fields.isActive.checked = Boolean(user.isActive);
 
-      state.editingTenantId = tenant.tenantId;
-      formTitle.textContent = `Edit tenant ${tenant.tenantName}`;
+      state.editingId = user.userId;
+      isActiveWrapper.classList.remove('hidden');
+      formTitle.textContent = `Edit user ${user.userName}`;
       submitBtn.textContent = 'Update';
-      setMessage(`Editing tenant ${tenant.tenantName}`);
+      setMessage(`Editing the user ${user.displayName}`);
     }
 
     function resetForm(clearMessage = true) {
       form.reset();
+      fields.userName.readOnly = false;
+      fields.isActive.checked = true;
+      fields.tenant.value = state.tenantId;
+      isActiveWrapper.classList.add('hidden');
       state.editingId = null;
-      formTitle.textContent = 'Add new Tenant';
+      formTitle.textContent = 'Add new User';
       submitBtn.textContent = 'Save';
       if (clearMessage) {
         setMessage('');
       }
     }
 
-    function renderTenants() {
-      tenantCount.textContent = state.tenants.length;
+    function renderUsers() {
+      userCount.textContent = state.users.length;
 
-      if (state.tenants.length === 0) {
-        tenantTableBody.innerHTML = '<tr><td colspan="5">Empty list.</td></tr>';
+      if (state.users.length === 0) {
+        userTableBody.innerHTML = '<tr><td colspan="8">Empty list.</td></tr>';
         return;
       }
 
-      tenantTableBody.innerHTML = state.tenants.map((tenant, index) => `
+      userTableBody.innerHTML = state.users.map((user, index) => `
         <tr>
           <td>${index + 1}</td>
-          <td>${tenant.tenantName}</td>
-          <td>${tenant.hostName}</td>
-          <td>${tenant.port}</td>
+          <td>${user.userName}</td>
+          <td>${user.displayName}</td>
+          <td>${user.phone}</td>
+          <td>
+            <span class="status-pill ${user.isActive && user.status === 'active' ? 'status-active' : 'status-inactive'}">
+              ${user.status}${user.isActive ? '' : ' / disabled'}
+            </span>
+          </td>
           <td>
             <div class="actions">
-              <button class="ghost" type="button" data-action="detail" data-id="${tenant.tenantId}">Detail</button>
-              <button class="ghost" type="button" data-action="edit" data-id="${tenant.tenantId}">Edit</button>
-              <button class="danger" type="button" data-action="delete" data-id="${tenant.tenantId}">Delete</button>
+              <button class="ghost" type="button" data-action="edit" data-id="${user.userId}">Edit</button>
+              <button class="danger" type="button" data-action="delete" data-id="${user.userId}">Delete</button>
             </div>
           </td>
         </tr>
       `).join('');
     }
 
-    async function fetchTenants() {
-      const response = await fetch('/api/tenants');
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || 'Failed to fetch tenants');
-      }
-
-      state.tenants = await response.json();
-      renderTenants();
+    function applyTenantHeader() {
+      pageTitle.textContent = `Users in ${state.tenantName}`;
+      fields.tenant.value = state.tenantId;
     }
 
-    async function saveTenant(payload) {
-      const isEditing = Boolean(state.editingTenantId);
-      const endpoint = isEditing ? `/api/tenants/${encodeURIComponent(state.editingTenantId)}` : '/api/tenants';
+    async function fetchTenant() {
+      const response = await fetch(`/api/tenants/${encodeURIComponent(state.tenantId)}`);
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.message || 'Failed to fetch tenant');
+      }
+
+      state.tenantName = data.tenantName;
+      applyTenantHeader();
+    }
+
+    async function fetchUsers() {
+      const response = await fetch(`/api/tenants/${encodeURIComponent(state.tenantId)}/users`);
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to fetch users');
+      }
+
+      state.users = await response.json();
+      renderUsers();
+    }
+
+    async function saveUser(payload) {
+      const isEditing = Boolean(state.editingId);
+      const endpoint = isEditing ? `/api/users/${encodeURIComponent(state.editingId)}` : '/api/users';
       const method = isEditing ? 'PUT' : 'POST';
 
       const response = await fetch(endpoint, {
@@ -456,60 +520,55 @@
 
       const data = await response.json();
       if (!response.ok) {
-        throw new Error(data.message || 'Failed to save tenant');
+        throw new Error(data.message || 'Failed to save user');
       }
 
       return data;
     }
 
-    async function deleteTenant(id) {
-      const response = await fetch(`/api/tenants/${encodeURIComponent(id)}`, {
+    async function deleteUser(id) {
+      const response = await fetch(`/api/users/${encodeURIComponent(id)}`, {
         method: 'DELETE',
       });
 
       const data = await response.json();
       if (!response.ok) {
-        throw new Error(data.message || 'Failed to delete tenant');
+        throw new Error(data.message || 'Failed to delete user');
       }
 
       return data;
     }
 
-    tenantTableBody.addEventListener('click', async (event) => {
+    userTableBody.addEventListener('click', async (event) => {
       const button = event.target.closest('button');
       if (!button) {
         return;
       }
 
       const { action, id } = button.dataset;
-      const tenant = state.tenants.find((item) => item.tenantId === Number(id));
-      if (!tenant) {
-        return;
-      }
-
-      if (action === 'detail') {
-        window.location.href = `/tenant_detail.html?tenantId=${encodeURIComponent(id)}`;
+      const user = state.users.find((item) => item.id === Number(id));
+      if (!user) {
         return;
       }
 
       if (action === 'edit') {
-        fillForm(tenant);
+        fillForm(user);
         return;
       }
 
       if (action === 'delete') {
-        const confirmed = window.confirm(`Delete tenant ${tenant.tenantName}? All users will be deleted as well.`);
+        const confirmed = window.confirm(`Delete user ${user.userName}?`);
         if (!confirmed) {
           return;
         }
 
         try {
-          const deletedUsers = await deleteTenant(id);
-          await fetchTenants();
-          if (state.editingTenantId === id) {
+          await deleteUser(id);
+          await fetchUsers();
+          if (state.editingId === id) {
             resetForm();
           }
-          setMessage(`Deleted tenant ${tenant.tenantName} and ${deletedUsers} users`, 'success');
+          setMessage(`Deleted user ${user.userName}`, 'success');
         } catch (error) {
           setMessage(error.message, 'error');
         }
@@ -521,22 +580,25 @@
 
       try {
         const payload = getFormPayload();
-        const savedTenant = await saveTenant(payload);
-        const wasCreating = !state.editingTenantId;
-        await fetchTenants();
+        const savedUser = await saveUser(payload);
+        const wasCreating = !state.editingId;
+        await fetchUsers();
         if (wasCreating) {
           resetForm(false);
         }
-        setMessage(`Saved tenant ${savedTenant.tenantName}`, 'success');
+        setMessage(`Saved user ${savedUser.userName}`, 'success');
       } catch (error) {
         setMessage(error.message, 'error');
       }
     });
 
     createBtn.addEventListener('click', resetForm);
+    backBtn.addEventListener('click', () => {
+      window.location.href = '/admin.html';
+    });
     refreshBtn.addEventListener('click', async () => {
       try {
-        await fetchTenants();
+        await fetchUsers();
         setMessage('Refreshed the list', 'success');
       } catch (error) {
         setMessage(error.message, 'error');
@@ -544,9 +606,23 @@
     });
     resetBtn.addEventListener('click', resetForm);
 
-    fetchTenants().catch((error) => {
-      setMessage(error.message, 'error');
-    });
+    const params = new URLSearchParams(window.location.search);
+    state.tenantId = (params.get('tenantId') || '').trim();
+
+    if (!state.tenantId) {
+      setMessage('tenantId is required on the URL', 'error');
+      submitBtn.disabled = true;
+      createBtn.disabled = true;
+      refreshBtn.disabled = true;
+      resetBtn.disabled = true;
+    } else {
+      fetchTenant()
+        .then(fetchUsers)
+        .then(() => resetForm(false))
+        .catch((error) => {
+          setMessage(error.message, 'error');
+        });
+    }
   </script>
 </body>
 </html>

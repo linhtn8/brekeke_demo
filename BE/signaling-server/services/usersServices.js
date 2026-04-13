@@ -2,7 +2,6 @@ const {
   closeDatabase,
   createUser,
   deleteUser,
-  getNextUserId,
   getUserById,
   getUserByUserName,
   listUsers,
@@ -13,7 +12,7 @@ const {
 
 function normalizeUserPayload(payload, { requireId = false } = {}) {
   const normalized = {
-    id: payload.id ? String(payload.id).trim() : '',
+    userId: payload.userId ? String(payload.userId).trim() : '',
     userName: payload.userName ? String(payload.userName).trim() : '',
     password: payload.password ? String(payload.password) : '',
     displayName: payload.displayName ? String(payload.displayName).trim() : '',
@@ -66,7 +65,6 @@ async function getTenantUsers(tenant) {
 
 async function createNewUser(payload) {
   const user = normalizeUserPayload(payload);
-  user.id = await getNextUserId();
   user.status = 'inactive';
   user.isActive = true;
 
@@ -82,7 +80,7 @@ async function updateExistingUser(userId, payload) {
     throw error;
   }
 
-  const user = normalizeUserPayload({ ...payload, id: userId }, { requireId: true });
+  const user = normalizeUserPayload({ ...payload, userId: userId }, { requireId: true });
   user.userName = existingUser.userName;
   user.status = existingUser.status;
 

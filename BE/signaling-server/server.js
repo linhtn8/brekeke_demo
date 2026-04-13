@@ -14,10 +14,19 @@ const {
   validateRegisterUser,
   waitForDatabase,
 } = require('./services/usersServices');
+const {
+  createNewTenant,
+  deleteExistingTenant,
+  getAllTenants,
+  getTenantDetail,
+  updateExistingTenant,
+} = require('./services/tenantServices');
 
 const PORT = process.env.PORT || 8080;
 const ADMIN_PAGE_PATH = path.join(__dirname, 'public', 'admin.html');
+const TENANT_DETAIL_PAGE_PATH = path.join(__dirname, 'public', 'tenant_detail.html');
 const users = new Map();
+let webSocketServer = null;
 
 function sendToUser(userId, message) {
   const ws = users.get(userId);
@@ -137,10 +146,47 @@ async function handleApiRequest(req, res, pathname) {
     return true;
   }
 
+  if (req.method === 'GET' && pathname === '/api/tenants') {
+    const allTenants = await getAllTenants();
+    sendJson(res, 200, allTenants);
+    return true;
+  }
+
+  if (req.method === 'POST' && pathname === '/api/tenants') {
+    const payload = await readRequestBody(req);
+    const createdTenant = await createNewTenant(payload);
+    sendJson(res, 201, createdTenant);
+    return true;
+  }
+
+  const tenantIdMatch = pathname.match(/^\/api\/tenants\/([^/]+)$/);
+  if (tenantIdMatch) {
+    const tenantId = decodeURIComponent(tenantIdMatch[1]);
+
+    if (req.method === 'GET') {
+      const tenant = await getTenantDetail(tenantId);
+      sendJson(res, 200, tenant);
+      return true;
+    }
+
+    if (req.method === 'PUT') {
+      const payload = await readRequestBody(req);
+      const updatedTenant = await updateExistingTenant(tenantId, payload);
+      sendJson(res, 200, updatedTenant);
+      return true;
+    }
+
+    if (req.method === 'DELETE') {
+      const deletedTenant = await deleteExistingTenant(tenantId);
+      sendJson(res, 200, deletedTenant);
+      return true;
+    }
+  }
+
   const tenantUsersMatch = pathname.match(/^\/api\/tenants\/([^/]+)\/users$/);
   if (req.method === 'GET' && tenantUsersMatch) {
-    const tenant = decodeURIComponent(tenantUsersMatch[1]);
-    const tenantUsers = await getTenantUsers(tenant);
+    const tenantId = decodeURIComponent(tenantUsersMatch[1]);
+    const tenantUsers = await getTenantUsers(tenantId);
     sendJson(res, 200, tenantUsers);
     return true;
   }
@@ -404,8 +450,6 @@ function handleWebSocketConnection(wss) {
 
 async function startServer() {
   await waitForDatabase();
-
-  const adminPage = fs.readFileSync(ADMIN_PAGE_PATH, 'utf8');
   const server = http.createServer(async (req, res) => {
     try {
       const requestUrl = new URL(req.url, `http://${req.headers.host}`);
@@ -427,14 +471,27 @@ async function startServer() {
         return;
       }
 
-      if ((req.method === 'GET' || req.method === 'HEAD') && (pathname === '/' || pathname === '/admin')) {
+      if ((req.method === 'GET' || req.method === 'HEAD') && (pathname === '/' || pathname === '/admin' || pathname === '/admin.html')) {
         if (req.method === 'HEAD') {
           res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
           res.end();
           return;
         }
 
+        const adminPage = fs.readFileSync(ADMIN_PAGE_PATH, 'utf8');
         sendHtml(res, adminPage);
+        return;
+      }
+
+      if ((req.method === 'GET' || req.method === 'HEAD') && (pathname === '/tenant_detail' || pathname === '/tenant_detail.html')) {
+        if (req.method === 'HEAD') {
+          res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+          res.end();
+          return;
+        }
+
+        const tenantDetailPage = fs.readFileSync(TENANT_DETAIL_PAGE_PATH, 'utf8');
+        sendHtml(res, tenantDetailPage);
         return;
       }
 
@@ -445,8 +502,8 @@ async function startServer() {
     }
   });
 
-  const wss = new WebSocket.Server({ server });
-  handleWebSocketConnection(wss);
+  webSocketServer = new WebSocket.Server({ server });
+  handleWebSocketConnection(webSocketServer);
 
   server.listen(PORT, () => {
     console.log(`🚀 BAP Signaling Server started on port ${PORT}`);
@@ -479,7 +536,9 @@ async function shutdown() {
   });
 
   // Close WebSocket server
-  await new Promise(resolve => wss.close(resolve));
+  if (webSocketServer) {
+    await new Promise((resolve) => webSocketServer.close(resolve));
+  }
 
   // Close database
   await closeDatabase();
