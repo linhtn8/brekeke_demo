@@ -59,18 +59,33 @@ const css = StyleSheet.create({
 })
 
 export const IncomingCallScreen = observer(() => {
+  const ringtoneStoppedRef = { current: false }
+
   useEffect(() => {
     // Start playing ringtone when the screen mounts
     IncallManager?.startRingtone('_BUNDLE_', [], 'ios_category', 0)
 
     return () => {
-      // Stop ringtone when answered, rejected, or unmounted
-      IncallManager?.stopRingtone()
+      // Only stop ringtone if not already stopped (e.g. when accepting)
+      // This prevents stopRingtone from destroying the audio session
+      // that webrtcService.getUserMedia just established via InCallManager.start()
+      if (!ringtoneStoppedRef.current) {
+        IncallManager?.stopRingtone()
+      }
     }
   }, [])
 
   const handleAccept = () => {
-    ctx.webrtc.acceptCall()
+    // CRITICAL: Stop ringtone BEFORE acceptCall so that
+    // InCallManager.start() (called inside acceptCall) runs AFTER ringtone cleanup.
+    // This prevents restoreOriginalAudioSetup from killing the VoIP audio session.
+    IncallManager?.stopRingtone()
+    ringtoneStoppedRef.current = true
+
+    // Small delay to let iOS finish the ringtone cleanup before starting VoIP audio
+    setTimeout(() => {
+      ctx.webrtc.acceptCall()
+    }, 150)
   }
 
   const handleReject = () => {

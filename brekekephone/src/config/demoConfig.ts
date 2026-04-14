@@ -115,13 +115,30 @@ export const WEBRTC_CONFIG = {
   // Replace with your local IP if testing on physical devices (e.g. 'ws://192.168.1.10:8080')
   // signalingServerUrl: 'ws://localhost:8080', 172.65.1.240
   // signalingServerUrl: 'ws://192.168.1.11:8080',
-  signalingServerUrl: 'ws://localhost:8080',
+  signalingServerUrl: 'wss://bap-phone.bappartners.com',
+  // signalingServerUrl: 'ws://localhost:8080',
   // signalingServerUrl: 'wss://salty-squids-brake.loca.lt',
 
-  // STUN servers for NAT traversal
+  // ============================================
+  // TURN Server Configuration
+  // ============================================
+  // To enable cross-network calling (4G <-> WiFi), you MUST have a TURN server.
+  // Sign up FREE at https://dashboard.metered.ca/signup
+  // Create an app, then set your API key + app name below.
+  // Free tier: 500MB TURN traffic / month (unlimited STUN).
+  //
+  // Set to null to use STUN-only (same-network calls only)
+  meteredApiKey: null,
+  // Example: meteredApiKey: 'your_api_key_here',
+  meteredAppName: 'bap-phone.metered.live',
+  // Example: meteredAppName: 'yourappname',
+
+  // Fallback STUN servers (always used, works for same-network calls)
   iceServers: [
     { urls: 'stun:stun.l.google.com:19302' },
     { urls: 'stun:stun1.l.google.com:19302' },
+    { urls: 'stun:stun2.l.google.com:19302' },
+    { urls: 'stun:stun3.l.google.com:19302' },
   ],
 
   // Call timeouts (milliseconds)
@@ -131,3 +148,4 @@ export const WEBRTC_CONFIG = {
   reconnectAttempts: 5,
   reconnectDelay: 2000, // Initial delay, will exponentially backoff
 }
+
