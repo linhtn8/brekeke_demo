@@ -53,6 +53,7 @@ export class PageSettingsDebug extends Component {
       >
         {!isWeb && (
           <>
+            {/* TODO: Temporarily hidden in demo mode - debug log uses device file system (iOS/Android), not suitable for demo
             <Field isGroup label={intl`DEBUG LOG`} />
             <Field
               label={intl`CAPTURE ALL DEBUG LOG`}
@@ -68,6 +69,7 @@ export class PageSettingsDebug extends Component {
               onTouchPress={ctx.nav.goToPageSettingsDebugFiles}
               value={ctx.debug.getLogSizeStr()}
             />
+            */}
 
             <Field hasMargin isGroup label={intl`UPDATE`} />
             <Field

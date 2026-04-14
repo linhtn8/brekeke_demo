@@ -37,11 +37,13 @@ const css = StyleSheet.create({
   avatarText: {
     fontSize: 48,
     fontWeight: 'bold',
+    lineHeight: 48,
     color: 'white',
   },
   calleeName: {
     fontSize: 28,
     fontWeight: 'bold',
+    lineHeight: 28,
     color: 'white',
     marginBottom: 10,
     textAlign: 'center',
@@ -56,11 +58,13 @@ const css = StyleSheet.create({
   },
   statusText: {
     fontSize: 20,
+    lineHeight: 20,
     color: 'white',
     textAlign: 'center',
   },
   timerText: {
     fontSize: 24,
+    lineHeight: 24,
     color: 'white',
     fontWeight: '600',
     marginTop: 10,
@@ -82,6 +86,7 @@ const css = StyleSheet.create({
   },
   noCallText: {
     fontSize: 18,
+    lineHeight: 18,
     color: 'white',
   },
 })
