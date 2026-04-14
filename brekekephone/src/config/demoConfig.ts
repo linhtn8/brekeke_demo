@@ -128,7 +128,7 @@ export const WEBRTC_CONFIG = {
   // Free tier: 500MB TURN traffic / month (unlimited STUN).
   //
   // Set to null to use STUN-only (same-network calls only)
-  meteredApiKey: '1e04663844219f3893c67990d74bc0830d82',
+  meteredApiKey: 'null',
   // Example: meteredApiKey: 'your_api_key_here',
   meteredAppName: 'bap-phone',
   // Example: meteredAppName: 'yourappname' (NOT the full domain, just the app name)
