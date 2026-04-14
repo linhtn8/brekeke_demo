@@ -185,14 +185,15 @@ export const AccountCreateForm: FC<{
                     },
                   ]
                 : []),
-              ...(!isWeb
-                ? [
-                    {
-                      label: intl`Open debug log`,
-                      onPress: ctx.nav.goToPageSettingsDebugFiles,
-                    },
-                  ]
-                : []),
+              // TODO: Temporarily hidden in demo mode - debug log uses device file system (iOS/Android), not suitable for demo
+              // ...(!isWeb
+              //   ? [
+              //       {
+              //         label: intl`Open debug log`,
+              //         onPress: ctx.nav.goToPageSettingsDebugFiles,
+              //       },
+              //     ]
+              //   : []),
               {
                 label: intl`Logout`,
                 onPress: ctx.auth.signOut,

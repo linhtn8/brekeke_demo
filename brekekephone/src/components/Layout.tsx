@@ -16,6 +16,7 @@ import type { HeaderDropdownItem } from '#/components/HeaderDropdown'
 import { Toast } from '#/components/Toast'
 import { v } from '#/components/variables'
 import { RnKeyboard } from '#/stores/RnKeyboard'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 const DEFAULT_TOAST_MESSAGE = 'new message'
 
@@ -86,6 +87,7 @@ export const Layout: FC<
   }>
 > = observer(originalProps => {
   const [headerOverflow, setHeaderOverflow] = useState(false)
+  const insets = useSafeAreaInsets()
 
   const props = { ...originalProps } // clone so it can be mutated
 
@@ -128,7 +130,7 @@ export const Layout: FC<
   }
 
   // TODO: put more document here
-  let headerSpace = 86 + 15
+  let headerSpace = 86 + 15 + insets.top
   if (props.menu) {
     headerSpace += 35
   }

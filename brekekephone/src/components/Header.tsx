@@ -1,6 +1,7 @@
 import type { FC } from 'react'
 import { useState } from 'react'
 import { StyleSheet, View } from 'react-native'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import { BackBtn } from '#/components/HeaderBackBtn'
 import { CreateBtn } from '#/components/HeaderCreateBtn'
@@ -75,6 +76,7 @@ export const Header: FC<
     iconRightFuncs,
   } = p
   const [dropdownActive, setDropdownActive] = useState(false)
+  const insets = useSafeAreaInsets()
   const onPressRightIcons = (i: number) => {
     if (iconRights && iconRights[i]) {
       iconRightFuncs?.[i]?.()
@@ -88,6 +90,7 @@ export const Header: FC<
             css.Outer,
             compact && css.Outer__compact,
             transparent && css.Outer__transparent,
+            { paddingTop: insets.top },
           ]}
         >
           <View style={onBack && css.Inner__hasBackBtn}>

@@ -25,7 +25,7 @@ export const RootView = memo(({ children }: RootViewProps) => {
 
   return (
     <SafeAreaProvider>
-      <SafeAreaView style={s}>{children}</SafeAreaView>
+      <SafeAreaView edges={['left', 'right']} style={s}>{children}</SafeAreaView>
     </SafeAreaProvider>
   )
 })

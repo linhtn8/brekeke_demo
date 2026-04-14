@@ -2,6 +2,7 @@ import type { FC } from 'react'
 import { StyleSheet } from 'react-native'
 import type { LinearGradientProps } from 'react-native-linear-gradient'
 import LinearGradient from 'react-native-linear-gradient'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import { v } from '#/components/variables'
 import { DEMO_COLORS, DEMO_MODE } from '#/config/demoConfig'
@@ -29,10 +30,13 @@ const getGradientColors = (white?: boolean): string[] => {
 export type BrekekeGradientProps = Omit<LinearGradientProps, 'colors'> & {
   white?: boolean
 }
-export const BrekekeGradient: FC<BrekekeGradientProps> = props => (
-  <LinearGradient
-    {...props}
-    colors={getGradientColors(props.white)}
-    style={[css.BrekekeGradient, props.style]}
-  />
-)
+export const BrekekeGradient: FC<BrekekeGradientProps> = props => {
+  const insets = useSafeAreaInsets()
+  return (
+    <LinearGradient
+      {...props}
+      colors={getGradientColors(props.white)}
+      style={[css.BrekekeGradient, { paddingTop: insets.top }, props.style]}
+    />
+  )
+}
