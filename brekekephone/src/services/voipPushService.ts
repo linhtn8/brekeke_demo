@@ -24,7 +24,7 @@ class VoipPushService {
     const options = {
       ios: {
         appName: 'BAP Phone',
-        imageName: 'sim_icon',
+        imageName: 'CallKitLogo',
         supportsVideo: false,
         maximumCallGroups: '1',
         maximumCallsPerCallGroup: '1',
@@ -36,7 +36,7 @@ class VoipPushService {
           'This application needs to access your phone calling accounts to make calls',
         cancelButton: 'Cancel',
         okButton: 'ok',
-        imageName: 'sim_icon',
+        imageName: 'CallKitLogo',
         additionalPermissions: [] as string[],
       },
     }
@@ -160,6 +160,11 @@ class VoipPushService {
     if (!PHASE_3_ENABLED || Platform.OS !== 'ios') {
       return
     }
+    const { AppState } = require('react-native')
+    if (AppState.currentState === 'active') {
+      console.log('[VoIP] App is active, skipping CallKit UI for incoming call')
+      return
+    }
     try {
       console.log(`[VoIP] Forcing CallKit display for WS incoming call: ${uuid}`)
       RNCallKeep.displayIncomingCall(
@@ -171,6 +176,18 @@ class VoipPushService {
       )
     } catch (err) {
       console.error('[VoIP] Error displaying CallKit natively:', err)
+    }
+  }
+
+  public reportAnswerCall(callId: string) {
+    if (!PHASE_3_ENABLED || Platform.OS !== 'ios') {
+      return
+    }
+    try {
+      console.log(`[VoIP] Programmatically answering CallKit for call: ${callId}`)
+      RNCallKeep.answerIncomingCall(callId)
+    } catch (err) {
+      console.error('[VoIP] Error answering CallKeep call:', err)
     }
   }
 }

@@ -139,16 +139,6 @@ export const DemoCallScreen = observer(() => {
     return () => clearInterval(interval)
   }, [demoStore.getActiveCall.isActive, demoStore.getActiveCall.startTime])
 
-  // Handle when call ends
-  useEffect(() => {
-    if (!demoStore.getActiveCall.isActive && elapsedTime > 0) {
-      // Call ended, navigate back after a short delay
-      setTimeout(() => {
-        ctx.nav.goToPageContactUsers()
-      }, 500)
-    }
-  }, [demoStore.getActiveCall.isActive])
-
   const handleEndCall = () => {
     demoStore.endMockCall()
     ctx.nav.goToPageContactUsers()

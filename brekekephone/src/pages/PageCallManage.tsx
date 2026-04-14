@@ -243,7 +243,6 @@ export class RenderAllCalls extends Component {
   render() {
     // Demo mode: show DemoCallScreen only if there's an active call
     if (DEMO_MODE) {
-      // Only render call screen if demo has active call
       if (ctx.demo.getActiveCall.isActive) {
         const activeCall = ctx.demo.getActiveCall
         if (
@@ -255,7 +254,6 @@ export class RenderAllCalls extends Component {
         }
         return <DemoCallScreen />
       }
-      // No call in demo mode, don't render anything
       return null
     }
 

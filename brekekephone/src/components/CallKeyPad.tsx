@@ -22,7 +22,6 @@ const css = StyleSheet.create({
   },
   KeyPad_NumberBtn: {
     width: '33.3%',
-    height: '15%'
   },
   KeyPad_Btn: {
     flexDirection: 'row',

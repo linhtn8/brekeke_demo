@@ -1,7 +1,7 @@
 import { lowerFirst } from 'lodash'
 import { observer } from 'mobx-react'
 import type { FC } from 'react'
-import { Platform, StyleSheet, View } from 'react-native'
+import { StyleSheet, View } from 'react-native'
 
 import { FooterActions } from '#/components/FooterActions'
 import { Navigation } from '#/components/FooterNavigation'
@@ -71,7 +71,6 @@ export const Footer: FC<{
       style={[
         css.Footer,
         (render || !RnKeyboard.isKeyboardShowing) && css.Footer__noKeyboard,
-        Platform.OS === 'ios' && { paddingBottom: 0 }
       ]}
     >
       {render ? (

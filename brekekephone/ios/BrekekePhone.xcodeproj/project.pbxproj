@@ -632,7 +632,7 @@
 				CODE_SIGN_ENTITLEMENTS = BrekekePhone/BrekekePhone.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 7;
+				CURRENT_PROJECT_VERSION = 8;
 				DEVELOPMENT_TEAM = SUG49M587C;
 				ENABLE_BITCODE = NO;
 				INFOPLIST_FILE = BrekekePhone/Info.plist;
@@ -666,7 +666,7 @@
 				CODE_SIGN_ENTITLEMENTS = BrekekePhone/BrekekePhone.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 7;
+				CURRENT_PROJECT_VERSION = 8;
 				DEVELOPMENT_TEAM = SUG49M587C;
 				ENABLE_BITCODE = NO;
 				INFOPLIST_FILE = BrekekePhone/Info.plist;
@@ -832,7 +832,7 @@
 				CODE_SIGN_ENTITLEMENTS = BrekekeLPCExtension/BrekekeLPCExtension.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 7;
+				CURRENT_PROJECT_VERSION = 8;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				DEVELOPMENT_TEAM = SUG49M587C;
 				EXCLUDED_ARCHS = "";
@@ -872,7 +872,7 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 7;
+				CURRENT_PROJECT_VERSION = 8;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = SUG49M587C;
 				EXCLUDED_ARCHS = "";
