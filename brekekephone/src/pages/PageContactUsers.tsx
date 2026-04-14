@@ -9,13 +9,14 @@ import { UserItem } from '#/components/ContactUserItem'
 import { Field } from '#/components/Field'
 import { Layout } from '#/components/Layout'
 import { RnText, RnTouchableOpacity } from '#/components/Rn'
-import type { DEMO_CONTACTS } from '#/config/demoConfig'
-import { DEMO_MODE, PHASE_2_ENABLED } from '#/config/demoConfig'
+import type { DemoContact } from '#/config/demoConfig'
+import { DEMO_CONTACTS, DEMO_MODE, PHASE_2_ENABLED } from '#/config/demoConfig'
 import type { ChatMessage } from '#/stores/chatStore'
 import { ctx } from '#/stores/ctx'
 import { demoStore } from '#/stores/demoStore'
 import { intl } from '#/stores/intl'
 import { DelayFlag } from '#/utils/DelayFlag'
+import { signalingUsersService } from '#/services/signalingUsersService'
 import { filterTextOnly } from '#/utils/formatChatContent'
 
 @observer
@@ -313,65 +314,134 @@ const demoStyles = StyleSheet.create({
 })
 
 // Demo Contact Item Component
-const DemoContactItem = observer(
-  ({ contact }: { contact: (typeof DEMO_CONTACTS)[0] }) => {
-    const initials = contact.name
-      .split(' ')
-      .map(n => n[0])
-      .join('')
-      .toUpperCase()
+const DemoContactItem = observer(({ contact }: { contact: DemoContact }) => {
+  const initials = contact.name
+    .split(' ')
+    .map(n => n[0])
+    .join('')
+    .toUpperCase()
 
-    const handleCall = async () => {
-      if (PHASE_2_ENABLED) {
-        ctx.webrtc.startCall(contact.id)
-        return
-      }
-
-      // Start mock call using demoStore
-      const success = await demoStore.startMockCall(contact.id)
-      if (success) {
-        // Navigate to call page
-        ctx.nav.goToPageCallManage()
-      }
+  const handleCall = async () => {
+    if (PHASE_2_ENABLED) {
+      ctx.webrtc.startCall(contact.id)
+      return
     }
 
-    return (
-      <View style={demoStyles.contactItem}>
-        <View style={demoStyles.avatar}>
-          <RnText style={demoStyles.avatarText}>{initials}</RnText>
-          {contact.isOnline && (
-            <View
-              style={{
-                position: 'absolute',
-                bottom: 0,
-                right: 0,
-                width: 14,
-                height: 14,
-                borderRadius: 7,
-                backgroundColor: '#4CAF50',
-                borderWidth: 2,
-                borderColor: 'white',
-              }}
-            />
-          )}
-        </View>
-        <View style={demoStyles.contactInfo}>
-          <RnText style={demoStyles.contactName}>{contact.name}</RnText>
-          <RnText style={demoStyles.contactPhone}>{contact.phone}</RnText>
-        </View>
-        <RnTouchableOpacity style={demoStyles.callButton} onPress={handleCall}>
-          <RnText style={demoStyles.callButtonText}>Call</RnText>
-        </RnTouchableOpacity>
+    // Start mock call using demoStore
+    const success = await demoStore.startMockCall(contact.id)
+    if (success) {
+      // Navigate to call page
+      ctx.nav.goToPageCallManage()
+    }
+  }
+
+  return (
+    <View style={demoStyles.contactItem}>
+      <View style={demoStyles.avatar}>
+        <RnText style={demoStyles.avatarText}>{initials}</RnText>
+        {contact.isOnline && (
+          <View
+            style={{
+              position: 'absolute',
+              bottom: 0,
+              right: 0,
+              width: 14,
+              height: 14,
+              borderRadius: 7,
+              backgroundColor: '#4CAF50',
+              borderWidth: 2,
+              borderColor: 'white',
+            }}
+          />
+        )}
       </View>
-    )
-  },
-)
+      <View style={demoStyles.contactInfo}>
+        <RnText style={demoStyles.contactName}>{contact.name}</RnText>
+        <RnText style={demoStyles.contactPhone}>{contact.phone}</RnText>
+      </View>
+      <RnTouchableOpacity style={demoStyles.callButton} onPress={handleCall}>
+        <RnText style={demoStyles.callButtonText}>Call</RnText>
+      </RnTouchableOpacity>
+    </View>
+  )
+})
 
 // Demo Contacts Page
 const DemoContactsPage = observer(() => {
   const [searchTerm, setSearchTerm] = React.useState('')
+  const [contacts, setContacts] = React.useState<DemoContact[]>(DEMO_CONTACTS)
+  const [isLoading, setIsLoading] = React.useState(false)
 
-  const filteredContacts = demoStore.contacts.filter(
+  React.useEffect(() => {
+    let mounted = true
+
+    const loadUsers = async () => {
+      setIsLoading(true)
+      try {
+        const ca = ctx.auth.getCurrentAccount()
+        const tenant = ca?.pbxTenant
+        const currentUser = demoStore.currentUser
+        if (!tenant) {
+          throw new Error('Missing tenant')
+        }
+
+        const users = await signalingUsersService.getTenantUsers(tenant)
+        if (!mounted) {
+          return
+        }
+
+        setContacts(
+          users
+            .filter(user => {
+              if (!currentUser) {
+                return true
+              }
+
+              return !(
+                user.id === currentUser.id ||
+                user.userName === currentUser.userName ||
+                user.phone === currentUser.phone
+              )
+            })
+            .map(user => ({
+              id: user.id,
+              name: user.displayName || user.userName || user.phone || user.id,
+              phone: user.phone || user.id,
+              isOnline:
+                ctx.webrtc.onlineUsers.includes(user.id) ||
+                ctx.webrtc.onlineUsers.includes(user.phone),
+            })),
+        )
+      } catch (error) {
+        console.log(
+          '[PageContactUsers] Failed to load tenant users from signaling server:',
+          error,
+        )
+        if (mounted) {
+          setContacts(demoStore.contacts)
+        }
+      } finally {
+        if (mounted) {
+          setIsLoading(false)
+        }
+      }
+    }
+
+    loadUsers()
+
+    return () => {
+      mounted = false
+    }
+  }, [])
+
+  const displayContacts = contacts.map(contact => ({
+    ...contact,
+    isOnline:
+      ctx.webrtc.onlineUsers.includes(contact.id) ||
+      ctx.webrtc.onlineUsers.includes(contact.phone),
+  }))
+
+  const filteredContacts = displayContacts.filter(
     contact =>
       contact.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       contact.phone.includes(searchTerm),
@@ -379,7 +449,11 @@ const DemoContactsPage = observer(() => {
 
   return (
     <Layout
-      description={`${filteredContacts.length} contacts`}
+      description={
+        isLoading
+          ? 'Loading contacts...'
+          : `${filteredContacts.length} contacts`
+      }
       menu='contact'
       subMenu='users'
       title='Contacts'

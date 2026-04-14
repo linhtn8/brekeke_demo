@@ -170,7 +170,7 @@ function log(message) {
 
 wss.on('connection', (ws) => {
   log('New client connected');
-  
+
   let currentUserId = null;
 
   ws.on('message', (data) => {
@@ -179,21 +179,21 @@ wss.on('connection', (ws) => {
       log(`Received: ${message.type} from ${currentUserId || 'unknown'}`);
 
       switch (message.type) {
-        // ============================================
-        // USER REGISTRATION
-        // ============================================
+          // ============================================
+          // USER REGISTRATION
+          // ============================================
         case 'register':
           currentUserId = message.userId;
           users.set(currentUserId, ws);
-          
+
           if (ENABLE_PUSH_NOTIFICATIONS && message.apnsToken) {
             userTokens.set(currentUserId, message.apnsToken);
             log(`🍏 APNs token registered for ${currentUserId}`);
           }
-          
+
           log(`✅ User registered: ${currentUserId} (${message.userName || 'No name'})`);
           log(`📊 Online users (${users.size}): ${getOnlineUsers().join(', ')}`);
-          
+
           // Send registration success
           ws.send(JSON.stringify({
             type: 'register-success',
@@ -201,7 +201,7 @@ wss.on('connection', (ws) => {
             onlineUsers: getOnlineUsers().filter(id => id !== currentUserId),
             timestamp: Date.now(),
           }));
-          
+
           // Check for pending calls
           if (activeCalls.has(currentUserId)) {
             const pending = activeCalls.get(currentUserId);
@@ -228,23 +228,23 @@ wss.on('connection', (ws) => {
           });
           break;
 
-        // ============================================
-        // CALL OFFER
-        // ============================================
+          // ============================================
+          // CALL OFFER
+          // ============================================
         case 'call-offer': {
           const { to: receiver, offer, callerName } = message;
-          
+
           log(`📞 Call offer: ${currentUserId} → ${receiver}`);
-          
+
           // Always generate a UUID for the call so we can cancel it later via Push if needed
           let callUuid = null;
 
           // Timeout Handler setup (30s)
-            const setupCallTimeout = (uuid, callerId, callerName, offer = null) => {
+          const setupCallTimeout = (uuid, callerId, callerName, offer = null) => {
             const timeout = setTimeout(() => {
               log(`⏳ Timeout reached for call: ${callerId} → ${receiver}`);
               activeCalls.delete(receiver);
-              
+
               // Tell caller that the receiver didn't answer
               sendToUser(callerId, {
                 type: 'call-timeout',
@@ -262,15 +262,15 @@ wss.on('connection', (ws) => {
 
             activeCalls.set(receiver, { uuid, callerId, callerName, offer, timeout });
           };
-          
+
           // Check if receiver is online via WebSocket
           if (!users.has(receiver)) {
             if (ENABLE_PUSH_NOTIFICATIONS) {
               log(`⚠️ Receiver offline: ${receiver}. Attempting to wake via VoIP Push...`);
-              
+
               // Attempt to send VoIP Push
               callUuid = sendVoIPPush(receiver, currentUserId, callerName);
-              
+
               if (callUuid) {
                 log(`⏳ Waiting for ${receiver} to wake up and reconnect...`);
                 // Save offer to send when receiver reconnects
@@ -293,11 +293,11 @@ wss.on('connection', (ws) => {
             }
             break;
           }
-          
+
           // Forward offer to receiver (they are online via WS)
           // We still create a UUID to track the timeout just in case they don't answer WS either
           callUuid = require('uuid').v4();
-          
+
           const sent = sendToUser(receiver, {
             type: 'incoming-call',
             from: currentUserId,
@@ -306,7 +306,7 @@ wss.on('connection', (ws) => {
             uuid: callUuid,
             timestamp: Date.now(),
           });
-          
+
           if (!sent) {
             log(`❌ Failed to send offer to ${receiver}`);
             ws.send(JSON.stringify({
@@ -322,20 +322,20 @@ wss.on('connection', (ws) => {
           break;
         }
 
-        // ============================================
-        // CALL ANSWER
-        // ============================================
+          // ============================================
+          // CALL ANSWER
+          // ============================================
         case 'call-answer':
           log(`✅ Call answered: ${currentUserId} → ${message.to}`);
           clearCallTimeout(currentUserId); // currentUserId is the receiver here
-          
+
           const answerSent = sendToUser(message.to, {
             type: 'call-answer',
             from: currentUserId,
             answer: message.answer,
             timestamp: Date.now(),
           });
-          
+
           if (answerSent) {
             log(`✅ Answer forwarded to ${message.to}`);
           } else {
@@ -343,12 +343,12 @@ wss.on('connection', (ws) => {
           }
           break;
 
-        // ============================================
-        // ICE CANDIDATE
-        // ============================================
+          // ============================================
+          // ICE CANDIDATE
+          // ============================================
         case 'ice-candidate':
           log(`🧊 ICE candidate: ${currentUserId} → ${message.to}`);
-          
+
           sendToUser(message.to, {
             type: 'ice-candidate',
             from: currentUserId,
@@ -357,13 +357,13 @@ wss.on('connection', (ws) => {
           });
           break;
 
-        // ============================================
-        // CALL REJECTED
-        // ============================================
+          // ============================================
+          // CALL REJECTED
+          // ============================================
         case 'call-rejected':
           log(`❌ Call rejected: ${currentUserId} → ${message.to} (${message.reason || 'no reason'})`);
           clearCallTimeout(currentUserId);
-          
+
           sendToUser(message.to, {
             type: 'call-rejected',
             from: currentUserId,
@@ -372,19 +372,19 @@ wss.on('connection', (ws) => {
           });
           break;
 
-        // ============================================
-        // CALL ENDED
-        // ============================================
+          // ============================================
+          // CALL ENDED
+          // ============================================
         case 'call-ended':
           log(`📴 Call ended: ${currentUserId} → ${message.to}`);
-          
+
           // Also send a cancel push just in case the receiver is offline and we just rang them
           if (ENABLE_PUSH_NOTIFICATIONS && activeCalls.has(message.to)) {
-             const callData = activeCalls.get(message.to);
-             if (callData.callerId === currentUserId) {
-                log(`🍏 Sending Cancel Push to ${message.to} because caller ended call early`);
-                sendVoIPPush(message.to, currentUserId, null, true, callData.uuid);
-             }
+            const callData = activeCalls.get(message.to);
+            if (callData.callerId === currentUserId) {
+              log(`🍏 Sending Cancel Push to ${message.to} because caller ended call early`);
+              sendVoIPPush(message.to, currentUserId, null, true, callData.uuid);
+            }
           }
 
           // message.to is the receiver if caller ends it, or currentUserId if receiver ends it
@@ -398,9 +398,9 @@ wss.on('connection', (ws) => {
           });
           break;
 
-        // ============================================
-        // UNKNOWN MESSAGE TYPE
-        // ============================================
+          // ============================================
+          // UNKNOWN MESSAGE TYPE
+          // ============================================
         default:
           log(`⚠️  Unknown message type: ${message.type}`);
           ws.send(JSON.stringify({
@@ -426,14 +426,14 @@ wss.on('connection', (ws) => {
       log(`👋 User disconnected: ${currentUserId}`);
       users.delete(currentUserId);
       userTokens.delete(currentUserId); // Cleanup APNs token to avoid memory leak
-      
+
       // Notify others
       broadcastExcept(currentUserId, {
         type: 'user-offline',
         userId: currentUserId,
         timestamp: Date.now(),
       });
-      
+
       log(`📊 Online users (${users.size}): ${getOnlineUsers().join(', ') || 'none'}`);
     } else {
       log('👋 Unregistered client disconnected');
@@ -459,7 +459,7 @@ wss.on('error', (error) => {
 
 process.on('SIGINT', () => {
   console.log('\n🛑 Shutting down server...');
-  
+
   // Notify all connected users
   users.forEach((ws) => {
     if (ws.readyState === WebSocket.OPEN) {
@@ -471,11 +471,11 @@ process.on('SIGINT', () => {
       ws.close();
     }
   });
-  
+
   if (ENABLE_PUSH_NOTIFICATIONS && apnProvider) {
     apnProvider.shutdown();
   }
-  
+
   wss.close(() => {
     console.log('✅ Server closed successfully');
     process.exit(0);

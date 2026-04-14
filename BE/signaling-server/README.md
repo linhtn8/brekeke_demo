@@ -10,6 +10,8 @@ This is a simple WebSocket server that relays signaling messages between two Web
 - Call offer/answer forwarding
 - ICE candidate exchange
 - Call events (reject, end, offline)
+- PostgreSQL user storage running in Docker
+- Admin screen for listing, creating, updating, and deleting users
 
 ## 🚀 Quick Start
 
@@ -23,6 +25,35 @@ This is a simple WebSocket server that relays signaling messages between two Web
 ```bash
 cd BE/signaling-server
 npm install
+cp .env.example .env
+```
+
+### Start Database
+
+```bash
+npm run db:up
+```
+
+PostgreSQL will be exposed at `localhost:5432` and seeded with a default user:
+
+```json
+{
+  "id": "1",
+  "userName": "user1",
+  "password": "pass",
+  "displayName": "Manager 01",
+  "phone": "101",
+  "tenant": "tenantA",
+  "status": "active",
+  "isActive": true
+}
+```
+
+If you need to rerun the init script, remove the existing volume first:
+
+```bash
+docker compose down -v
+npm run db:up
 ```
 
 ### Run Server
@@ -32,6 +63,8 @@ npm start
 ```
 
 Server will start on `ws://localhost:8080`
+
+Admin screen will be available at `http://localhost:8080/admin`
 
 ### Development Mode (Auto-restart)
 
@@ -44,6 +77,11 @@ npm run dev
 | Setting | Default | Environment Variable |
 |---------|---------|---------------------|
 | Port    | 8080    | `PORT`              |
+| DB Host | localhost | `DB_HOST`         |
+| DB Port | 5432    | `DB_PORT`           |
+| DB Name | signaling_db | `DB_NAME`      |
+| DB User | postgres | `DB_USER`          |
+| DB Password | postgres | `DB_PASSWORD`  |
 
 **Example:**
 ```bash
@@ -51,6 +89,17 @@ PORT=9000 npm start
 ```
 
 ## 🧪 Testing
+
+### Admin Screen
+
+Open `http://localhost:8080/admin` to:
+
+- View current users
+- Add a new user
+- Edit an existing user
+- Delete a user
+
+The screen uses the REST endpoints below on the same backend server.
 
 ### Test with Browser Console
 
@@ -63,12 +112,12 @@ const ws = new WebSocket('ws://localhost:8080');
 ws.onopen = () => {
   console.log('✅ Connected to signaling server');
   
-  // Register user
-  ws.send(JSON.stringify({
-    type: 'register',
-    userId: '101',
-    userName: 'Manager 01'
-  }));
+// Register user
+ws.send(JSON.stringify({
+  type: 'register',
+  userId: '1',
+  password: 'pass'
+}));
 };
 
 ws.onmessage = (event) => {
@@ -130,8 +179,8 @@ ws.send(JSON.stringify({
 ```json
 {
   "type": "register",
-  "userId": "101",
-  "userName": "Manager 01"
+  "userId": "1",
+  "password": "pass"
 }
 ```
 
@@ -180,13 +229,63 @@ ws.send(JSON.stringify({
 }
 ```
 
+### Admin REST API
+
+#### 1. List Users
+
+```http
+GET /api/users
+```
+
+#### 2. Create User
+
+```http
+POST /api/users
+Content-Type: application/json
+```
+
+```json
+{
+  "id": "2",
+  "userName": "user2",
+  "password": "pass2",
+  "displayName": "Agent 02",
+  "phone": "102",
+  "tenant": "tenantA",
+  "status": "active",
+  "isActive": true
+}
+```
+
+#### 3. Update User
+
+```http
+PUT /api/users/2
+Content-Type: application/json
+```
+
+#### 4. Delete User
+
+```http
+DELETE /api/users/2
+```
+
 ### Server → Client
 
 #### 1. Registration Success
 ```json
 {
   "type": "register-success",
-  "userId": "101",
+  "userId": "1",
+  "user": {
+    "id": "1",
+    "userName": "user1",
+    "displayName": "Manager 01",
+    "phone": "101",
+    "tenant": "tenantA",
+    "status": "active",
+    "isActive": true
+  },
   "onlineUsers": ["102", "103"],
   "timestamp": 1234567890
 }
@@ -246,8 +345,9 @@ ws.send(JSON.stringify({
 ```json
 {
   "type": "user-online",
-  "userId": "102",
-  "userName": "Manager 02",
+  "userId": "1",
+  "userName": "user1",
+  "displayName": "Manager 01",
   "timestamp": 1234567890
 }
 ```

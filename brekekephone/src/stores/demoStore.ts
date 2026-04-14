@@ -17,6 +17,8 @@ import {
   DEMO_MODE,
   PHASE_2_ENABLED,
 } from '#/config/demoConfig'
+import type { SignalingUser } from '#/services/signalingUsersService'
+import { signalingUsersService } from '#/services/signalingUsersService'
 import { ctx } from '#/stores/ctx'
 
 export interface DemoCallState {
@@ -38,6 +40,9 @@ class DemoStore {
 
   /** Loading state for login spinner */
   @observable isLoading = false
+
+  /** Current logged in signaling user */
+  @observable currentUser: SignalingUser | null = null
 
   /** Current mock call state */
   @observable currentCall: DemoCallState = {
@@ -193,34 +198,37 @@ class DemoStore {
    */
   @action login = async (
     username: string = 'demo',
+    password: string = '',
     onComplete?: () => void,
   ) => {
     if (!DEMO_MODE) {
-      return
+      return false
     }
 
     this.isLoading = true
 
-    setTimeout(
-      action(async () => {
-        this.isLoading = false
-        this.isLoggedIn = true
+    try {
+      const user = await signalingUsersService.login(username, password)
 
-        // Create a mock account for demo mode
-        if (ctx.account.accounts.length === 0) {
-          const mockAccount = ctx.account.genEmptyAccount()
-          mockAccount.pbxUsername = username
-          mockAccount.pbxTenant = '-'
-          mockAccount.pbxHostname = 'demo.local'
-          mockAccount.pbxPort = '8443'
-          await ctx.account.upsertAccount(mockAccount)
-          ctx.auth.signedInId = mockAccount.id
-          console.log('[DemoStore] Created mock account:', mockAccount.id)
-        } else if (!ctx.auth.signedInId) {
-          const acc = ctx.account.accounts[0]
-          ctx.auth.signedInId = acc.id
-          console.log('[DemoStore] Using existing account:', acc.id)
-        }
+      await new Promise(resolve => setTimeout(resolve, DEMO_LOGIN_SETTINGS.loadingDuration))
+
+      this.isLoggedIn = true
+      this.currentUser = user
+
+      if (ctx.account.accounts.length === 0) {
+        const mockAccount = ctx.account.genEmptyAccount()
+        mockAccount.pbxUsername = user.userName
+        mockAccount.pbxTenant = user.tenant || '-'
+        mockAccount.pbxHostname = 'demo.local'
+        mockAccount.pbxPort = '8443'
+        await ctx.account.upsertAccount(mockAccount)
+        ctx.auth.signedInId = mockAccount.id
+        console.log('[DemoStore] Created mock account:', mockAccount.id)
+      } else if (!ctx.auth.signedInId) {
+        const acc = ctx.account.accounts[0]
+        ctx.auth.signedInId = acc.id
+        console.log('[DemoStore] Using existing account:', acc.id)
+      }
 
         // Initialize WebRTC signaling if Phase 2 is enabled
         if (PHASE_2_ENABLED) {
@@ -238,10 +246,15 @@ class DemoStore {
           ctx.webrtc.connect(userId, userNameLabel)
         }
 
-        onComplete?.()
-      }),
-      DEMO_LOGIN_SETTINGS.loadingDuration,
-    )
+      onComplete?.()
+      return true
+    } catch (error) {
+      console.log('[DemoStore] Login failed:', error)
+      this.isLoggedIn = false
+      throw error
+    } finally {
+      this.isLoading = false
+    }
   }
 
   /**
@@ -250,6 +263,7 @@ class DemoStore {
   @action logout = () => {
     this.isLoggedIn = false
     this.isLoading = false
+    this.currentUser = null
     this.endMockCall()
 
     if (PHASE_2_ENABLED) {

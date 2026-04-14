@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tenant Admin</title>
+  <style>
+    :root {
+      --bg: #f5efe4;
+      --panel: rgba(255, 252, 247, 0.94);
+      --panel-strong: #fffaf1;
+      --ink: #1e1a16;
+      --muted: #6d6258;
+      --line: rgba(60, 43, 27, 0.12);
+      --accent: #c95f35;
+      --accent-strong: #9f3f1c;
+      --accent-soft: rgba(201, 95, 53, 0.14);
+      --danger: #a63131;
+      --success: #2e7d5f;
+      --shadow: 0 24px 60px rgba(79, 52, 25, 0.12);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "Segoe UI", sans-serif;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at top left, rgba(201, 95, 53, 0.18), transparent 28%),
+        radial-gradient(circle at right 20%, rgba(56, 115, 104, 0.16), transparent 24%),
+        linear-gradient(180deg, #f8f2e8 0%, #efe5d5 100%);
+    }
+
+    .shell {
+      width: min(1200px, calc(100% - 32px));
+      margin: 32px auto;
+      display: grid;
+      gap: 20px;
+    }
+
+    .hero,
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 24px;
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(16px);
+    }
+
+    .hero {
+      padding: 28px;
+      display: flex;
+      justify-content: space-between;
+      align-items: end;
+      gap: 16px;
+    }
+
+    .hero h1 {
+      margin: 0 0 8px;
+      font-size: clamp(2rem, 4vw, 3.25rem);
+      line-height: 1;
+      letter-spacing: -0.04em;
+    }
+
+    .hero p,
+    .meta {
+      margin: 0;
+      color: var(--muted);
+    }
+
+    .panel {
+      padding: 24px;
+    }
+
+    .toolbar,
+    .stats {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .toolbar {
+      justify-content: space-between;
+      margin-bottom: 20px;
+    }
+
+    .stats strong {
+      font-size: 1.35rem;
+    }
+
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: var(--accent-soft);
+      color: var(--accent-strong);
+      font-size: 0.92rem;
+      font-weight: 700;
+    }
+
+    button,
+    input,
+    select {
+      font: inherit;
+    }
+
+    button {
+      border: 0;
+      border-radius: 14px;
+      padding: 12px 16px;
+      cursor: pointer;
+      transition: transform 160ms ease, opacity 160ms ease, background 160ms ease;
+    }
+
+    button:hover {
+      transform: translateY(-1px);
+    }
+
+    .primary {
+      background: var(--accent);
+      color: white;
+    }
+
+    .ghost {
+      background: rgba(30, 26, 22, 0.06);
+      color: var(--ink);
+    }
+
+    .danger {
+      background: rgba(166, 49, 49, 0.12);
+      color: var(--danger);
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1.6fr) minmax(320px, 0.9fr);
+      gap: 20px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    th,
+    td {
+      padding: 14px 12px;
+      text-align: left;
+      border-bottom: 1px solid var(--line);
+      vertical-align: top;
+    }
+
+    th {
+      color: var(--muted);
+      font-size: 0.84rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    tbody tr:hover {
+      background: rgba(255, 255, 255, 0.45);
+    }
+
+    .status-pill {
+      display: inline-flex;
+      padding: 6px 10px;
+      border-radius: 999px;
+      font-size: 0.8rem;
+      font-weight: 700;
+    }
+
+    .status-active {
+      background: rgba(46, 125, 95, 0.12);
+      color: var(--success);
+    }
+
+    .status-inactive {
+      background: rgba(109, 98, 88, 0.12);
+      color: var(--muted);
+    }
+
+    .actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .form-grid {
+      display: grid;
+      gap: 14px;
+    }
+
+    .field {
+      display: grid;
+      gap: 8px;
+    }
+
+    .field label {
+      font-size: 0.88rem;
+      color: var(--muted);
+      font-weight: 700;
+    }
+
+    .field input,
+    .field select {
+      width: 100%;
+      border: 1px solid var(--line);
+      background: var(--panel-strong);
+      border-radius: 14px;
+      padding: 12px 14px;
+      color: var(--ink);
+    }
+
+    .inline {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .checkbox {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      color: var(--ink);
+      padding-top: 6px;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    .message {
+      min-height: 24px;
+      font-size: 0.92rem;
+      color: var(--muted);
+    }
+
+    .message.error {
+      color: var(--danger);
+    }
+
+    .message.success {
+      color: var(--success);
+    }
+
+    @media (max-width: 980px) {
+      .layout {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 640px) {
+      .shell {
+        width: min(100% - 20px, 1200px);
+        margin: 20px auto;
+      }
+
+      .hero,
+      .panel {
+        border-radius: 20px;
+      }
+
+      .inline {
+        grid-template-columns: 1fr;
+      }
+
+      th:nth-child(5),
+      td:nth-child(5),
+      th:nth-child(6),
+      td:nth-child(6) {
+        display: none;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <section class="hero">
+      <div>
+        <p class="tag">Admin Console</p>
+        <h1>Tenant Management</h1>
+      </div>
+    </section>
+
+    <section class="panel layout">
+      <div>
+        <div class="toolbar">
+          <div class="stats">
+            <strong id="tenantCount">0</strong>
+            <span class="meta">tenants</span>
+          </div>
+          <div class="actions">
+            <button id="refreshBtn" class="ghost" type="button">Refresh</button>
+            <button id="createBtn" class="primary" type="button">Add Tenant</button>
+          </div>
+        </div>
+
+        <div style="overflow:auto;">
+          <table>
+            <thead>
+              <tr>
+                <th>No.</th>
+                <th>Tenant Name</th>
+                <th>Host Name</th>
+                <th>Port</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="tenantTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <aside>
+        <h2 id="formTitle">Add new Tenant</h2>
+        <form id="tenantForm" class="form-grid">
+          <div class="inline">
+            <div class="field">
+              <label for="tenantName">Tenant Name</label>
+              <input id="tenantName" name="tenantName" placeholder="Tenant A" required>
+            </div>
+          </div>
+
+          <div class="inline">
+            <div class="field">
+              <label for="hostName">Host Name</label>
+              <input id="hostName" name="hostName" placeholder="pbx.example.com" required>
+            </div>
+            <div class="field">
+              <label for="port">Port</label>
+              <input id="port" name="port" placeholder="8080" required>
+            </div>
+          </div>
+
+          <div class="actions">
+            <button id="submitBtn" class="primary" type="submit">Save</button>
+            <button id="resetBtn" class="ghost" type="button">Clear Form</button>
+          </div>
+          <div id="message" class="message"></div>
+        </form>
+      </aside>
+    </section>
+  </main>
+
+  <script>
+    const state = {
+      editingTenantId: null,
+      tenants: [],
+    };
+
+    const tenantTableBody = document.getElementById('tenantTableBody');
+    const tenantCount = document.getElementById('tenantCount');
+    const form = document.getElementById('tenantForm');
+    const formTitle = document.getElementById('formTitle');
+    const message = document.getElementById('message');
+    const createBtn = document.getElementById('createBtn');
+    const refreshBtn = document.getElementById('refreshBtn');
+    const resetBtn = document.getElementById('resetBtn');
+    const submitBtn = document.getElementById('submitBtn');
+    const fields = {
+      tenantId: document.getElementById('tenantId'),
+      tenantName: document.getElementById('tenantName'),
+      hostName: document.getElementById('hostName'),
+      port: document.getElementById('port'),
+    };
+
+    function setMessage(text, type = '') {
+      message.textContent = text;
+      message.className = `message ${type}`.trim();
+    }
+
+    function getFormPayload() {
+      const formData = new FormData(form);
+      return {
+        tenantName: formData.get('tenantName').trim(),
+        hostName: formData.get('hostName').trim(),
+        port: formData.get('port').trim(),
+      };
+    }
+
+    function fillForm(tenant) {
+      fields.tenantName.value = tenant.tenantName;
+      fields.hostName.value = tenant.hostName;
+      fields.port.value = tenant.port;
+
+      state.editingTenantId = tenant.tenantId;
+      formTitle.textContent = `Edit tenant ${tenant.tenantName}`;
+      submitBtn.textContent = 'Update';
+      setMessage(`Editing tenant ${tenant.tenantName}`);
+    }
+
+    function resetForm(clearMessage = true) {
+      form.reset();
+      state.editingId = null;
+      formTitle.textContent = 'Add new Tenant';
+      submitBtn.textContent = 'Save';
+      if (clearMessage) {
+        setMessage('');
+      }
+    }
+
+    function renderTenants() {
+      tenantCount.textContent = state.tenants.length;
+
+      if (state.tenants.length === 0) {
+        tenantTableBody.innerHTML = '<tr><td colspan="5">Empty list.</td></tr>';
+        return;
+      }
+
+      tenantTableBody.innerHTML = state.tenants.map((tenant, index) => `
+        <tr>
+          <td>${index + 1}</td>
+          <td>${tenant.tenantName}</td>
+          <td>${tenant.hostName}</td>
+          <td>${tenant.port}</td>
+          <td>
+            <div class="actions">
+              <button class="ghost" type="button" data-action="detail" data-id="${tenant.tenantId}">Detail</button>
+              <button class="ghost" type="button" data-action="edit" data-id="${tenant.tenantId}">Edit</button>
+              <button class="danger" type="button" data-action="delete" data-id="${tenant.tenantId}">Delete</button>
+            </div>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    async function fetchTenants() {
+      const response = await fetch('/api/tenants');
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to fetch tenants');
+      }
+
+      state.tenants = await response.json();
+      renderTenants();
+    }
+
+    async function saveTenant(payload) {
+      const isEditing = Boolean(state.editingTenantId);
+      const endpoint = isEditing ? `/api/tenants/${encodeURIComponent(state.editingTenantId)}` : '/api/tenants';
+      const method = isEditing ? 'PUT' : 'POST';
+
+      const response = await fetch(endpoint, {
+        method,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.message || 'Failed to save tenant');
+      }
+
+      return data;
+    }
+
+    async function deleteTenant(id) {
+      const response = await fetch(`/api/tenants/${encodeURIComponent(id)}`, {
+        method: 'DELETE',
+      });
+
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.message || 'Failed to delete tenant');
+      }
+
+      return data;
+    }
+
+    tenantTableBody.addEventListener('click', async (event) => {
+      const button = event.target.closest('button');
+      if (!button) {
+        return;
+      }
+
+      const { action, id } = button.dataset;
+      const tenant = state.tenants.find((item) => item.tenantId === Number(id));
+      if (!tenant) {
+        return;
+      }
+
+      if (action === 'detail') {
+        window.location.href = `/tenant_detail.html?tenantId=${encodeURIComponent(id)}`;
+        return;
+      }
+
+      if (action === 'edit') {
+        fillForm(tenant);
+        return;
+      }
+
+      if (action === 'delete') {
+        const confirmed = window.confirm(`Delete tenant ${tenant.tenantName}? All users will be deleted as well.`);
+        if (!confirmed) {
+          return;
+        }
+
+        try {
+          const deletedUsers = await deleteTenant(id);
+          await fetchTenants();
+          if (state.editingTenantId === id) {
+            resetForm();
+          }
+          setMessage(`Deleted tenant ${tenant.tenantName} and ${deletedUsers} users`, 'success');
+        } catch (error) {
+          setMessage(error.message, 'error');
+        }
+      }
+    });
+
+    form.addEventListener('submit', async (event) => {
+      event.preventDefault();
+
+      try {
+        const payload = getFormPayload();
+        const savedTenant = await saveTenant(payload);
+        const wasCreating = !state.editingTenantId;
+        await fetchTenants();
+        if (wasCreating) {
+          resetForm(false);
+        }
+        setMessage(`Saved tenant ${savedTenant.tenantName}`, 'success');
+      } catch (error) {
+        setMessage(error.message, 'error');
+      }
+    });
+
+    createBtn.addEventListener('click', resetForm);
+    refreshBtn.addEventListener('click', async () => {
+      try {
+        await fetchTenants();
+        setMessage('Refreshed the list', 'success');
+      } catch (error) {
+        setMessage(error.message, 'error');
+      }
+    });
+    resetBtn.addEventListener('click', resetForm);
+
+    fetchTenants().catch((error) => {
+      setMessage(error.message, 'error');
+    });
+  </script>
+</body>
+</html>
