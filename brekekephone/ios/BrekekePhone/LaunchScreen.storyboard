@@ -47,7 +47,7 @@
                 image="LaunchScreenLogo"
                 id="aDZ-Vc-rp6"
               >
-                <rect key="frame" x="67" y="270" width="240" height="128" />
+                <rect key="frame" x="112" y="240" width="150" height="188" />
                 <autoresizingMask
                   key="autoresizingMask"
                   flexibleMinX="YES"
@@ -59,9 +59,9 @@
             </subviews>
             <color
               key="backgroundColor"
-              red="0.53498854138206386"
-              green="0.7693973183631897"
-              blue="0.43766238667172563"
+              red="1"
+              green="1"
+              blue="1"
               alpha="1"
               colorSpace="custom"
               customColorSpace="displayP3"
@@ -80,6 +80,6 @@
     </scene>
   </scenes>
   <resources>
-    <image name="LaunchScreenLogo" width="168" height="129" />
+    <image name="LaunchScreenLogo" width="1848" height="2304" />
   </resources>
 </document>

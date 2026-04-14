@@ -4,6 +4,7 @@ import { Platform, StatusBar, StyleSheet, View } from 'react-native'
 import { RnTouchableOpacity } from '#/components/RnTouchableOpacity'
 import { v } from '#/components/variables'
 import { isWeb } from '#/config'
+import { DEMO_MODE } from '#/config/demoConfig'
 
 const css = StyleSheet.create({
   RnStatusBar: {
@@ -40,7 +41,7 @@ export type TRnStatusBarProps = {
   onPress?(): void
 }
 export const RnStatusBar: FC<TRnStatusBarProps> = p =>
-  isWeb ? null : (
+  isWeb || DEMO_MODE ? null : (
     <RnTouchableOpacity
       style={[
         css.RnStatusBar,

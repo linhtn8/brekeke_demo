@@ -29,24 +29,28 @@ const css = StyleSheet.create({
   avatarText: {
     fontSize: 48,
     fontWeight: 'bold',
+    lineHeight: 48,
     color: 'white',
   },
   calleeName: {
     fontSize: 28,
     fontWeight: 'bold',
     color: 'white',
+    lineHeight: 28,
     marginBottom: 10,
     textAlign: 'center',
   },
   calleePhone: {
     fontSize: 18,
     color: 'rgba(255, 255, 255, 0.8)',
+    lineHeight: 18,
     marginBottom: 20,
   },
   statusText: {
     fontSize: 20,
     color: 'white',
     textAlign: 'center',
+    lineHeight: 20,
     marginBottom: 60,
   },
   buttonsContainer: {
