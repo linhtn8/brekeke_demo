@@ -6,7 +6,7 @@ function mapUser(row) {
     }
 
     return {
-        user_id: row.user_id,
+        userId: row.userId,
         userName: row.userName,
         password: row.password,
         displayName: row.displayName,
@@ -54,7 +54,7 @@ async function listUsers() {
 
 async function listUsersByTenant(tenant) {
     const result = await pool.query(
-        `SELECT user_id,
+        `SELECT user_id      AS "userId",
                 user_name    AS "userName",
                 password,
                 display_name AS "displayName",
@@ -67,7 +67,6 @@ async function listUsersByTenant(tenant) {
          ORDER BY user_id ASC`,
         [tenant]
     );
-
     return result.rows.map(mapUser);
 }
 

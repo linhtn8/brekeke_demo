@@ -386,7 +386,6 @@
     const resetBtn = document.getElementById('resetBtn');
     const submitBtn = document.getElementById('submitBtn');
     const pageTitle = document.getElementById('pageTitle');
-    const tenantMeta = document.getElementById('tenantMeta');
     const isActiveWrapper = document.getElementById('isActiveWrapper');
     const fields = {
       userName: document.getElementById('userName'),
@@ -544,9 +543,9 @@
       if (!button) {
         return;
       }
-
       const { action, id } = button.dataset;
-      const user = state.users.find((item) => item.id === Number(id));
+      const user = state.users.find((item) => item.userId === Number(id));
+
       if (!user) {
         return;
       }
