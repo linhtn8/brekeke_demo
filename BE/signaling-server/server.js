@@ -1,26 +1,5 @@
-const fs = require('fs');
-const http = require('http');
-const path = require('path');
 const WebSocket = require('ws');
-const {
-  closeDatabase,
-  createNewUser,
-  deleteExistingUser,
-  getAllUsers,
-  getTenantUsers,
-  loginUserByCredentials,
-  markUserOffline,
-  updateExistingUser,
-  validateRegisterUser,
-  waitForDatabase,
-} = require('./services/usersServices');
-const {
-  createNewTenant,
-  deleteExistingTenant,
-  getAllTenants,
-  getTenantDetail,
-  updateExistingTenant,
-} = require('./services/tenantServices');
+const fs = require('fs');
 
 // FEATURE FLAG CHO PHASE 3
 const ENABLE_PUSH_NOTIFICATIONS = true;
@@ -37,8 +16,8 @@ if (ENABLE_PUSH_NOTIFICATIONS) {
 
 // Configuration
 const PORT = process.env.PORT || 8080;
-const ADMIN_PAGE_PATH = path.join(__dirname, 'public', 'admin.html');
-const TENANT_DETAIL_PAGE_PATH = path.join(__dirname, 'public', 'tenant_detail.html');
+
+// Store connected users: { userId: WebSocket }
 const users = new Map();
 // Store user APNs tokens: { userId: apnsToken }
 const userTokens = new Map();
@@ -185,232 +164,28 @@ function log(message) {
   console.log(`[${timestamp}] ${message}`);
 }
 
-function sendJson(res, statusCode, payload) {
-  res.writeHead(statusCode, { 'Content-Type': 'application/json; charset=utf-8' });
-  res.end(JSON.stringify(payload));
-}
+// ============================================
+// WebSocket Server Event Handlers
+// ============================================
 
-function sendHtml(res, html) {
-  res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
-  res.end(html);
-}
+wss.on('connection', (ws) => {
+  log('New client connected');
 
-function setCorsHeaders(res) {
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-}
+  let currentUserId = null;
 
-function readRequestBody(req) {
-  return new Promise((resolve, reject) => {
-    let body = '';
-
-    req.on('data', (chunk) => {
-      body += chunk.toString();
-      if (body.length > 1_000_000) {
-        const error = new Error('Payload too large');
-        error.statusCode = 413;
-        reject(error);
-        req.destroy();
-      }
-    });
-
-    req.on('end', () => {
-      if (!body) {
-        resolve({});
-        return;
-      }
-
-      try {
-        resolve(JSON.parse(body));
-      } catch (error) {
-        error.statusCode = 400;
-        reject(error);
-      }
-    });
-
-    req.on('error', reject);
-  });
-}
-
-function handleDatabaseError(res, error) {
-  if (error.code === '23505') {
-    sendJson(res, 409, {
-      message: 'User ID or phone already exists',
-    });
-    return;
-  }
-
-  const statusCode = error.statusCode || 500;
-  sendJson(res, statusCode, {
-    message: error.message || 'Internal server error',
-  });
-}
-
-async function handleApiRequest(req, res, pathname) {
-  if (req.method === 'POST' && pathname === '/api/auth/login') {
-    const payload = await readRequestBody(req);
-    const authenticatedUser = await loginUserByCredentials(
-      payload.userName,
-      payload.password,
-    );
-    sendJson(res, 200, authenticatedUser);
-    return true;
-  }
-
-  if (req.method === 'GET' && pathname === '/api/users') {
-    const allUsers = await getAllUsers();
-    sendJson(res, 200, allUsers);
-    return true;
-  }
-
-  if (req.method === 'GET' && pathname === '/api/tenants') {
-    const allTenants = await getAllTenants();
-    sendJson(res, 200, allTenants);
-    return true;
-  }
-
-  if (req.method === 'POST' && pathname === '/api/tenants') {
-    const payload = await readRequestBody(req);
-    const createdTenant = await createNewTenant(payload);
-    sendJson(res, 201, createdTenant);
-    return true;
-  }
-
-  const tenantIdMatch = pathname.match(/^\/api\/tenants\/([^/]+)$/);
-  if (tenantIdMatch) {
-    const tenantId = decodeURIComponent(tenantIdMatch[1]);
-
-    if (req.method === 'GET') {
-      const tenant = await getTenantDetail(tenantId);
-      sendJson(res, 200, tenant);
-      return true;
-    }
-
-    if (req.method === 'PUT') {
-      const payload = await readRequestBody(req);
-      const updatedTenant = await updateExistingTenant(tenantId, payload);
-      sendJson(res, 200, updatedTenant);
-      return true;
-    }
-
-    if (req.method === 'DELETE') {
-      const deletedTenant = await deleteExistingTenant(tenantId);
-      sendJson(res, 200, deletedTenant);
-      return true;
-    }
-  }
-
-  const tenantUsersMatch = pathname.match(/^\/api\/tenants\/([^/]+)\/users$/);
-  if (req.method === 'GET' && tenantUsersMatch) {
-    const tenantId = decodeURIComponent(tenantUsersMatch[1]);
-    const tenantUsers = await getTenantUsers(tenantId);
-    sendJson(res, 200, tenantUsers);
-    return true;
-  }
-
-  if (req.method === 'POST' && pathname === '/api/users') {
-    const payload = await readRequestBody(req);
-    const createdUser = await createNewUser(payload);
-    sendJson(res, 201, createdUser);
-    return true;
-  }
-
-  const userIdMatch = pathname.match(/^\/api\/users\/([^/]+)$/);
-  if (!userIdMatch) {
-    return false;
-  }
-
-  const userId = decodeURIComponent(userIdMatch[1]);
-
-  if (req.method === 'PUT') {
-    const payload = await readRequestBody(req);
-    const updatedUser = await updateExistingUser(userId, payload);
-    sendJson(res, 200, updatedUser);
-    return true;
-  }
-
-  if (req.method === 'DELETE') {
-    const deletedUser = await deleteExistingUser(userId);
-    users.delete(userId);
-    sendJson(res, 200, deletedUser);
-    return true;
-  }
-
-  return false;
-}
-
-async function handleRegister(ws, message) {
-  if (!message.userId) {
-    ws.send(JSON.stringify({
-      type: 'error',
-      code: 'MISSING_USER_ID',
-      message: 'userId is required',
-      timestamp: Date.now(),
-    }));
-    return null;
-  }
-
-  let dbUser;
-  try {
-    dbUser = await validateRegisterUser(message);
-  } catch (error) {
-    ws.send(JSON.stringify({
-      type: 'error',
-      code: error.code || 'INVALID_MESSAGE',
-      message: error.message,
-      timestamp: Date.now(),
-    }));
-    return null;
-  }
-
-  const { password, ...safeUser } = dbUser;
-  users.set(dbUser.id, ws);
-
-  log(`✅ User registered: ${dbUser.userName} (${dbUser.displayName})`);
-  log(`📊 Online users (${users.size}): ${getOnlineUsers().join(', ') || 'none'}`);
-
-  ws.send(JSON.stringify({
-    type: 'register-success',
-    userId: dbUser.id,
-    user: safeUser,
-    onlineUsers: getOnlineUsers().filter((id) => id !== dbUser.id),
-    timestamp: Date.now(),
-  }));
-
-  broadcastExcept(dbUser.id, {
-    type: 'user-online',
-    userId: dbUser.id,
-    userName: dbUser.userName,
-    displayName: dbUser.displayName,
-    timestamp: Date.now(),
-  });
-
-  return dbUser.id;
-}
-
-function handleWebSocketConnection(wss) {
-  // ============================================
-  // WebSocket Server Event Handlers
-  // ============================================
-  wss.on('connection', (ws) => {
-    log('New client connected');
-
-    let currentUserId = null;
-
-    ws.on('message', async (data) => {
-      try {
-        const message = JSON.parse(data.toString());
-        log(`Received: ${message.type} from ${currentUserId || 'unknown'}`);
+  ws.on('message', (data) => {
+    try {
+      const message = JSON.parse(data.toString());
+      log(`Received: ${message.type} from ${currentUserId || 'unknown'}`);
 
       switch (message.type) {
-        // ============================================
-        // USER REGISTRATION
-        // ============================================
+          // ============================================
+          // USER REGISTRATION
+          // ============================================
         case 'register':
           currentUserId = message.userId;
           users.set(currentUserId, ws);
-          
+
           if (ENABLE_PUSH_NOTIFICATIONS && message.apnsToken) {
             userTokens.set(currentUserId, message.apnsToken);
             log(`🍏 APNs token registered for ${currentUserId}`);
@@ -453,9 +228,9 @@ function handleWebSocketConnection(wss) {
           });
           break;
 
-        // ============================================
-        // CALL OFFER
-        // ============================================
+          // ============================================
+          // CALL OFFER
+          // ============================================
         case 'call-offer': {
           const { to: receiver, offer, callerName } = message;
 
@@ -465,7 +240,7 @@ function handleWebSocketConnection(wss) {
           let callUuid = null;
 
           // Timeout Handler setup (30s)
-            const setupCallTimeout = (uuid, callerId, callerName, offer = null) => {
+          const setupCallTimeout = (uuid, callerId, callerName, offer = null) => {
             const timeout = setTimeout(() => {
               log(`⏳ Timeout reached for call: ${callerId} → ${receiver}`);
               activeCalls.delete(receiver);
@@ -547,9 +322,9 @@ function handleWebSocketConnection(wss) {
           break;
         }
 
-        // ============================================
-        // CALL ANSWER
-        // ============================================
+          // ============================================
+          // CALL ANSWER
+          // ============================================
         case 'call-answer':
           log(`✅ Call answered: ${currentUserId} → ${message.to}`);
           clearCallTimeout(currentUserId); // currentUserId is the receiver here
@@ -560,7 +335,7 @@ function handleWebSocketConnection(wss) {
             answer: message.answer,
             timestamp: Date.now(),
           });
-          
+
           if (answerSent) {
             log(`✅ Answer forwarded to ${message.to}`);
           } else {
@@ -568,12 +343,12 @@ function handleWebSocketConnection(wss) {
           }
           break;
 
-        // ============================================
-        // ICE CANDIDATE
-        // ============================================
+          // ============================================
+          // ICE CANDIDATE
+          // ============================================
         case 'ice-candidate':
           log(`🧊 ICE candidate: ${currentUserId} → ${message.to}`);
-          
+
           sendToUser(message.to, {
             type: 'ice-candidate',
             from: currentUserId,
@@ -582,9 +357,9 @@ function handleWebSocketConnection(wss) {
           });
           break;
 
-        // ============================================
-        // CALL REJECTED
-        // ============================================
+          // ============================================
+          // CALL REJECTED
+          // ============================================
         case 'call-rejected':
           log(`❌ Call rejected: ${currentUserId} → ${message.to} (${message.reason || 'no reason'})`);
           clearCallTimeout(currentUserId);
@@ -597,19 +372,19 @@ function handleWebSocketConnection(wss) {
           });
           break;
 
-        // ============================================
-        // CALL ENDED
-        // ============================================
+          // ============================================
+          // CALL ENDED
+          // ============================================
         case 'call-ended':
           log(`📴 Call ended: ${currentUserId} → ${message.to}`);
-          
+
           // Also send a cancel push just in case the receiver is offline and we just rang them
           if (ENABLE_PUSH_NOTIFICATIONS && activeCalls.has(message.to)) {
-             const callData = activeCalls.get(message.to);
-             if (callData.callerId === currentUserId) {
-                log(`🍏 Sending Cancel Push to ${message.to} because caller ended call early`);
-                sendVoIPPush(message.to, currentUserId, null, true, callData.uuid);
-             }
+            const callData = activeCalls.get(message.to);
+            if (callData.callerId === currentUserId) {
+              log(`🍏 Sending Cancel Push to ${message.to} because caller ended call early`);
+              sendVoIPPush(message.to, currentUserId, null, true, callData.uuid);
+            }
           }
 
           // message.to is the receiver if caller ends it, or currentUserId if receiver ends it
@@ -623,9 +398,9 @@ function handleWebSocketConnection(wss) {
           });
           break;
 
-        // ============================================
-        // UNKNOWN MESSAGE TYPE
-        // ============================================
+          // ============================================
+          // UNKNOWN MESSAGE TYPE
+          // ============================================
         default:
           log(`⚠️  Unknown message type: ${message.type}`);
           ws.send(JSON.stringify({
@@ -650,14 +425,15 @@ function handleWebSocketConnection(wss) {
     if (currentUserId) {
       log(`👋 User disconnected: ${currentUserId}`);
       users.delete(currentUserId);
-      
+      userTokens.delete(currentUserId); // Cleanup APNs token to avoid memory leak
+
       // Notify others
       broadcastExcept(currentUserId, {
         type: 'user-offline',
         userId: currentUserId,
         timestamp: Date.now(),
       });
-      
+
       log(`📊 Online users (${users.size}): ${getOnlineUsers().join(', ') || 'none'}`);
     } else {
       log('👋 Unregistered client disconnected');
@@ -667,71 +443,7 @@ function handleWebSocketConnection(wss) {
   ws.on('error', (error) => {
     log(`❌ WebSocket error: ${error.message}`);
   });
-}
-
-async function startServer() {
-  await waitForDatabase();
-  const server = http.createServer(async (req, res) => {
-    try {
-      const requestUrl = new URL(req.url, `http://${req.headers.host}`);
-      const pathname = requestUrl.pathname;
-
-      setCorsHeaders(res);
-
-      if (req.method === 'OPTIONS') {
-        res.writeHead(204);
-        res.end();
-        return;
-      }
-
-      if (pathname.startsWith('/api/')) {
-        const handled = await handleApiRequest(req, res, pathname);
-        if (!handled) {
-          sendJson(res, 404, { message: 'API route not found' });
-        }
-        return;
-      }
-
-      if ((req.method === 'GET' || req.method === 'HEAD') && (pathname === '/' || pathname === '/admin' || pathname === '/admin.html')) {
-        if (req.method === 'HEAD') {
-          res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
-          res.end();
-          return;
-        }
-
-        const adminPage = fs.readFileSync(ADMIN_PAGE_PATH, 'utf8');
-        sendHtml(res, adminPage);
-        return;
-      }
-
-      if ((req.method === 'GET' || req.method === 'HEAD') && (pathname === '/tenant_detail' || pathname === '/tenant_detail.html')) {
-        if (req.method === 'HEAD') {
-          res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
-          res.end();
-          return;
-        }
-
-        const tenantDetailPage = fs.readFileSync(TENANT_DETAIL_PAGE_PATH, 'utf8');
-        sendHtml(res, tenantDetailPage);
-        return;
-      }
-
-      res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
-      res.end('Not found');
-    } catch (error) {
-      handleDatabaseError(res, error);
-    }
-  });
-
-  webSocketServer = new WebSocket.Server({ server });
-  handleWebSocketConnection(webSocketServer);
-
-  server.listen(PORT, () => {
-    console.log(`🚀 BAP Signaling Server started on port ${PORT}`);
-    console.log(`🌐 Admin page: http://localhost:${PORT}/admin`);
-    console.log(`📡 WebSocket endpoint: ws://localhost:${PORT}`);
-    console.log('─'.repeat(50));
-  });
+});
 
 // ============================================
 // Server Error Handler
@@ -747,7 +459,7 @@ wss.on('error', (error) => {
 
 process.on('SIGINT', () => {
   console.log('\n🛑 Shutting down server...');
-  
+
   // Notify all connected users
   users.forEach((ws) => {
     if (ws.readyState === WebSocket.OPEN) {
@@ -759,12 +471,10 @@ process.on('SIGINT', () => {
       ws.close();
     }
   });
-  
+
   if (ENABLE_PUSH_NOTIFICATIONS && apnProvider) {
     apnProvider.shutdown();
   }
-  // Close database
-  closeDatabase();
 
   wss.close(() => {
     console.log('✅ Server closed successfully');
