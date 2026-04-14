@@ -8,7 +8,7 @@ import { ContactSectionList } from '#/components/ContactSectionList'
 import { UserItem } from '#/components/ContactUserItem'
 import { Field } from '#/components/Field'
 import { Layout } from '#/components/Layout'
-import { RnText, RnTouchableOpacity } from '#/components/Rn'
+import { RnIcon, RnText, RnTouchableOpacity } from '#/components/Rn'
 import type { DEMO_CONTACTS } from '#/config/demoConfig'
 import { DEMO_MODE, PHASE_2_ENABLED } from '#/config/demoConfig'
 import type { ChatMessage } from '#/stores/chatStore'
@@ -360,7 +360,7 @@ const DemoContactItem = observer(
           <RnText style={demoStyles.contactPhone}>{contact.phone}</RnText>
         </View>
         <RnTouchableOpacity style={demoStyles.callButton} onPress={handleCall}>
-          <RnText style={demoStyles.callButtonText}>Call</RnText>
+          <RnIcon color={"white"} path={mdiPhone} />
         </RnTouchableOpacity>
       </View>
     )

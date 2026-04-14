@@ -100,8 +100,8 @@ const css = StyleSheet.create({
   demoTitle: {
     fontSize: 28,
     fontWeight: 'bold',
+    lineHeight: 28,
     color: 'white',
-    marginTop: 10, // Reduce to avoid pushing too far down
     zIndex: 10,
   },
   demoInputContainer: {
