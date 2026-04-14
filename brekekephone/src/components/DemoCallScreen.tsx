@@ -241,18 +241,13 @@ export const DemoCallScreen = observer(() => {
           </View>
         )}
 
-        {/* Remote audio stream for Phase 2 WebRTC */}
+        {/* Remote audio stream for Phase 2 WebRTC - Web only */}
+        {/* On native iOS, audio plays automatically via RTCAudioSession (no RTCView needed) */}
         {PHASE_2_ENABLED &&
-          ctx.webrtc.remoteStream &&
-          (console.log('[DemoCallScreen] Rendering remote audio, stream URL:', ctx.webrtc.remoteStream?.toURL?.()) ||
-          (Platform.OS === 'web' ? (
+          Platform.OS === 'web' &&
+          ctx.webrtc.remoteStream && (
             <WebAudio stream={ctx.webrtc.remoteStream} />
-          ) : (
-            <RTCView
-              streamURL={ctx.webrtc.remoteStream?.toURL?.() || ''}
-              style={{ width: 0, height: 0 }}
-            />
-          )))}
+          )}
 
         {/* Hangup Button */}
         <View style={css.hangupButton}>

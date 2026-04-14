@@ -4,6 +4,7 @@ import { DEMO_CONTACTS, WEBRTC_CONFIG } from '#/config/demoConfig'
 import { signalingService } from '#/services/signalingService'
 import { webrtcService } from '#/services/webrtcService'
 import { ctx } from '#/stores/ctx'
+import { BrekekeUtils } from '#/utils/BrekekeUtils'
 
 export interface DemoContact {
   id: string
@@ -114,6 +115,9 @@ export class WebRTCStore {
           await webrtcService.setRemoteAnswer(answer)
           this.currentCall.status = 'connected'
           this.startDurationTimer()
+          // CRITICAL: Enable WebRTC audio on iOS (useManualAudio=true)
+          BrekekeUtils.webrtcSetAudioEnabled(true, 'demo-call-connected-caller')
+          console.log('[WebRTCStore] ✅ Audio enabled for caller')
         } catch (error) {
           ctx.toast.error({ err: new Error('Failed to set remote answer') })
           this.endCall(true)
@@ -207,8 +211,18 @@ export class WebRTCStore {
   }
 
   @action connect(userId: string, name: string) {
+    // If we're in demo mode, validate the user and get their real name
+    const contact = DEMO_CONTACTS.find(c => c.phone === userId)
+    if (!contact) {
+      console.warn(`[WebRTCStore] Unauthorized login attempt for user: ${userId}`)
+      return // Block unauthorized users from connecting to signaling server
+    }
+
+    // Use the name from DEMO_CONTACTS for a better experience on the backend log
+    const displayName = `${contact.name} (${userId})`
+
     signalingService
-      .connect(WEBRTC_CONFIG.signalingServerUrl, userId, name)
+      .connect(WEBRTC_CONFIG.signalingServerUrl, userId, displayName)
       .catch(e => {
         ctx.toast.error({
           err: new Error('Failed to connect to signaling server'),
@@ -289,6 +303,9 @@ export class WebRTCStore {
       signalingService.sendCallAnswer(this.currentCall.callee!.phone, answer)
       this.currentCall.status = 'connected'
       this.startDurationTimer()
+      // CRITICAL: Enable WebRTC audio on iOS (useManualAudio=true)
+      BrekekeUtils.webrtcSetAudioEnabled(true, 'demo-call-connected-callee')
+      console.log('[WebRTCStore] ✅ Audio enabled for callee')
     } catch (e: any) {
       if (e?.name === 'NotAllowedError' || e?.message?.includes('permission')) {
         ctx.toast.error({ err: new Error('Microphone permission denied') })
@@ -316,6 +333,8 @@ export class WebRTCStore {
   @action private resetCallState() {
     this.clearCallTimeout()
     this.clearDurationTimer()
+    // Disable WebRTC audio on iOS before cleanup
+    BrekekeUtils.webrtcSetAudioEnabled(false, 'demo-call-ended')
     webrtcService.close()
 
     this.currentCall = {

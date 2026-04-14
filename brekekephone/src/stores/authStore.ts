@@ -18,6 +18,7 @@ import {
   getLastSignedInId,
   saveLastSignedInId,
 } from '#/stores/accountStore'
+import { DEMO_CONTACTS, DEMO_MODE } from '#/config/demoConfig'
 import type { CallHistoryInfo } from '#/stores/addCallHistory'
 import type { Call } from '#/stores/Call'
 import { ctx } from '#/stores/ctx'
@@ -192,6 +193,18 @@ export class AuthStore {
     if (!a) {
       return false
     }
+
+    // DEMO MODE CHECK: ONLY ALLOW LOGGING IN AS USERS IN DEMO_CONTACTS
+    if (DEMO_MODE) {
+      const isAllowed = DEMO_CONTACTS.some(c => c.phone === a.pbxUsername)
+      if (!isAllowed) {
+        RnAlert.error({
+          message: intlDebug`User ${a.pbxUsername} is not allowed to login in Demo Mode. Please use one of the demo extensions: ${DEMO_CONTACTS.map(c => c.phone).join(', ')}`,
+        })
+        return false
+      }
+    }
+
     const d = await ctx.account.findDataWithDefault(a)
     if (!a.pbxPassword && !d.accessToken) {
       ctx.nav.goToPageAccountUpdate({ id: a.id })
@@ -265,6 +278,12 @@ export class AuthStore {
     console.log('signOut debug: autoStore.signOut')
     saveLastSignedInId(false)
     this.signOutWithoutSaving()
+
+    // Ensure WebRTC and demo states are cleared out immediately
+    if (DEMO_MODE) {
+      const { demoStore } = require('#/stores/demoStore')
+      demoStore.logout()
+    }
   }
   signOutWithoutSaving = () => {
     try {
