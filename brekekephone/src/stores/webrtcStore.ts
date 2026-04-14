@@ -2,9 +2,11 @@ import { action, computed, observable } from 'mobx'
 
 import { DEMO_CONTACTS, WEBRTC_CONFIG } from '#/config/demoConfig'
 import { signalingService } from '#/services/signalingService'
+import { voipPushService } from '#/services/voipPushService'
 import { webrtcService } from '#/services/webrtcService'
 import { ctx } from '#/stores/ctx'
 import { BrekekeUtils } from '#/utils/BrekekeUtils'
+import { v4 as uuidv4 } from 'uuid'
 
 export interface DemoContact {
   id: string
@@ -21,6 +23,7 @@ export interface WebRTCCallState {
   status: 'connecting' | 'ringing' | 'connected' | 'ended' | 'rejected'
   isIncoming?: boolean
   remoteOffer?: any
+  callUuid?: string
 }
 
 export class WebRTCStore {
@@ -75,7 +78,8 @@ export class WebRTCStore {
           this.endCall(true)
         }
       }),
-      onIncomingCall: action(({ from, offer }) => {
+      onIncomingCall: action((payload: any) => {
+        const { from, fromName, offer, uuid } = payload
         if (this.currentCall.isActive) {
           // Busy: Already in a call
           signalingService.rejectCall(from, 'busy')
@@ -83,9 +87,13 @@ export class WebRTCStore {
         }
         const contact = DEMO_CONTACTS.find(c => c.phone === from) || {
           id: from,
-          name: from,
+          name: fromName || from,
           phone: from,
         }
+        
+        // Ensure we always have a UUID for CallKit
+        const callUuid = uuid || uuidv4()
+        
         this.currentCall = {
           isActive: true,
           callee: contact,
@@ -93,7 +101,12 @@ export class WebRTCStore {
           status: 'ringing',
           isIncoming: true,
           remoteOffer: offer,
+          callUuid: callUuid,
         }
+
+        // Trigger CallKit natively so it appears over the lock screen or background 
+        // even if it was sent via WebSocket instead of VoIP Push
+        voipPushService.displayCallKit(callUuid, from, contact.name)
 
         // Phase 3: If user already tapped Answer from CallKit while app was waking up
         if (this.pendingAcceptCall) {

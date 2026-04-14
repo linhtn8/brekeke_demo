@@ -155,6 +155,24 @@ class VoipPushService {
       console.error('[VoIP] Error ending CallKeep call:', err)
     }
   }
+
+  public displayCallKit(uuid: string, callerId: string, callerName: string) {
+    if (!PHASE_3_ENABLED || Platform.OS !== 'ios') {
+      return
+    }
+    try {
+      console.log(`[VoIP] Forcing CallKit display for WS incoming call: ${uuid}`)
+      RNCallKeep.displayIncomingCall(
+        uuid,
+        callerId,
+        callerName,
+        'number',
+        false,
+      )
+    } catch (err) {
+      console.error('[VoIP] Error displaying CallKit natively:', err)
+    }
+  }
 }
 
 export const voipPushService = new VoipPushService()
