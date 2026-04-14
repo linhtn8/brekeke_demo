@@ -98,9 +98,18 @@ const WebAudio = ({ stream }: { stream: any }) => {
   useEffect(() => {
     if (audioRef.current && stream) {
       audioRef.current.srcObject = stream
+      // Explicitly play to bypass Safari iOS restrictions
+      const playPromise = audioRef.current.play()
+      if (playPromise !== undefined) {
+        playPromise.catch((e: any) => {
+          console.warn('[WebAudio] Autoplay prevented:', e)
+        })
+      }
     }
   }, [stream])
-  return <audio ref={audioRef} autoPlay style={{ display: 'none' }} />
+  
+  // Use width 0 instead of display:none, and add playsInline for iOS
+  return <audio ref={audioRef} autoPlay playsInline style={{ width: 0, height: 0, opacity: 0, position: 'absolute' }} />
 }
 
 export const DemoCallScreen = observer(() => {
@@ -232,17 +241,13 @@ export const DemoCallScreen = observer(() => {
           </View>
         )}
 
-        {/* Remote audio stream for Phase 2 WebRTC */}
+        {/* Remote audio stream for Phase 2 WebRTC - Web only */}
+        {/* On native iOS, audio plays automatically via RTCAudioSession (no RTCView needed) */}
         {PHASE_2_ENABLED &&
-          ctx.webrtc.remoteStream &&
-          (Platform.OS === 'web' ? (
+          Platform.OS === 'web' &&
+          ctx.webrtc.remoteStream && (
             <WebAudio stream={ctx.webrtc.remoteStream} />
-          ) : (
-            <RTCView
-              streamURL={ctx.webrtc.remoteStream?.toURL?.() || ''}
-              style={{ width: 0, height: 0 }}
-            />
-          ))}
+          )}
 
         {/* Hangup Button */}
         <View style={css.hangupButton}>

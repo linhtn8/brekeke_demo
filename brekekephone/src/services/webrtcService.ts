@@ -40,6 +40,11 @@ if (Platform.OS !== 'web') {
   RTCView = () => null
 }
 
+let InCallManager: any
+if (Platform.OS !== 'web') {
+  InCallManager = require('react-native-incall-manager').default
+}
+
 // ============================================
 // Type Definitions
 // ============================================
@@ -81,13 +86,40 @@ export type RTCIceConnectionState =
   | 'disconnected'
   | 'closed'
 
-// STUN server configuration (Google public STUN servers)
-const ICE_SERVERS = {
-  iceServers: [
-    { urls: 'stun:stun.l.google.com:19302' },
-    { urls: 'stun:stun1.l.google.com:19302' },
-    { urls: 'stun:stun2.l.google.com:19302' },
-  ],
+import { WEBRTC_CONFIG } from '#/config/demoConfig'
+
+// Get STUN/TURN servers from config (may be augmented with TURN at runtime)
+let ICE_SERVERS = {
+  iceServers: WEBRTC_CONFIG.iceServers,
+}
+
+/**
+ * Fetch TURN server credentials from Metered API (if API key is configured)
+ * Call this once before making/receiving calls.
+ */
+async function fetchTurnServers(): Promise<void> {
+  const { meteredApiKey, meteredAppName } = WEBRTC_CONFIG
+  if (!meteredApiKey || !meteredAppName) {
+    console.log('[WebRTC] No Metered API key configured. Using STUN-only (same-network calls only).')
+    return
+  }
+
+  try {
+    console.log('[WebRTC] Fetching TURN credentials from Metered...')
+    const response = await fetch(
+      `https://${meteredAppName}.metered.live/api/v1/turn/credentials?apiKey=${meteredApiKey}`,
+    )
+    const turnServers = await response.json()
+    console.log('[WebRTC] ✅ Got TURN servers:', turnServers.length, 'entries')
+
+    // Merge: STUN from config + TURN from API
+    ICE_SERVERS = {
+      iceServers: [...WEBRTC_CONFIG.iceServers, ...turnServers],
+    }
+  } catch (error) {
+    console.error('[WebRTC] ❌ Failed to fetch TURN credentials:', error)
+    console.log('[WebRTC] Falling back to STUN-only')
+  }
 }
 
 // ============================================
@@ -100,6 +132,8 @@ export class WebRTCService {
   private remoteStream: MediaStream | null = null
   private callbacks: WebRTCCallbacks = {}
   private isAudioEnabled = true
+  private pendingCandidates: any[] = []
+  private diagTimer: ReturnType<typeof setInterval> | null = null
 
   /**
    * Initialize WebRTC service with callbacks
@@ -117,6 +151,9 @@ export class WebRTCService {
     try {
       console.log('[WebRTC] Requesting audio permission...')
 
+      // Fetch TURN server credentials (if configured) before creating peer connection
+      await fetchTurnServers()
+
       const stream = await mediaDevices.getUserMedia({
         audio: true,
         video: false,
@@ -130,6 +167,23 @@ export class WebRTCService {
 
       // Notify callback
       this.callbacks.onLocalStream?.(stream)
+
+      console.log('[WebRTC] ✅ Local audio stream obtained:', stream.id)
+      console.log('[WebRTC] Audio tracks:', stream.getAudioTracks().map(t => ({
+        label: t.label,
+        enabled: t.enabled,
+        muted: t.muted,
+        kind: t.kind
+      })))
+
+      // CRITICAL: natively configure AudioSession to VoIP mode (play and record)
+      if (InCallManager) {
+        console.log('[WebRTC] Starting InCallManager...')
+        InCallManager.start({ media: 'audio' })
+        // Route audio to earpiece by default (user can toggle speaker)
+        InCallManager.setForceSpeakerphoneOn(false)
+        InCallManager.setMicrophoneMute(false)
+      }
 
       return stream
     } catch (error) {
@@ -165,7 +219,17 @@ export class WebRTCService {
       if (event.candidate) {
         console.log('[WebRTC] 🧊 ICE candidate generated')
         console.log('[WebRTC] Candidate:', event.candidate.candidate)
-        this.callbacks.onIceCandidate?.(event.candidate.toJSON())
+        
+        // Fix: React Native WebRTC candidate might not have toJSON()
+        const candidatePayload = typeof event.candidate.toJSON === 'function'
+          ? event.candidate.toJSON()
+          : {
+              candidate: event.candidate.candidate,
+              sdpMid: event.candidate.sdpMid,
+              sdpMLineIndex: event.candidate.sdpMLineIndex,
+            }
+            
+        this.callbacks.onIceCandidate?.(candidatePayload)
       } else {
         console.log('[WebRTC] 🧊 ICE candidate gathering complete')
       }
@@ -174,12 +238,31 @@ export class WebRTCService {
     // Handle remote stream (when peer adds their audio)
     pc.ontrack = (event: any) => {
       console.log('[WebRTC] 🎧 Remote track received')
-      console.log('[WebRTC] Track kind:', event.track.kind)
-      console.log('[WebRTC] Stream ID:', event.streams[0]?.id)
+      console.log('[WebRTC] Track kind:', event.track?.kind)
+      console.log('[WebRTC] Track enabled:', event.track?.enabled)
+      console.log('[WebRTC] Track readyState:', event.track?.readyState)
+      console.log('[WebRTC] event.streams length:', event.streams?.length)
 
-      if (event.streams && event.streams[0]) {
-        this.remoteStream = event.streams[0]
-        this.callbacks.onRemoteStream?.(event.streams[0])
+      let stream: any = null
+
+      if (event.streams && event.streams.length > 0 && event.streams[0]) {
+        stream = event.streams[0]
+        console.log('[WebRTC] ✅ Using stream from event.streams[0]:', stream.id)
+      } else if (event.track) {
+        // CRITICAL FIX: react-native-webrtc sometimes does NOT populate event.streams
+        // We must manually create a MediaStream and add the track
+        console.log('[WebRTC] ⚠️ event.streams empty, creating MediaStream manually')
+        stream = new MediaStream()
+        stream.addTrack(event.track)
+        console.log('[WebRTC] ✅ Manual MediaStream created with track:', event.track.kind)
+      }
+
+      if (stream) {
+        this.remoteStream = stream
+        console.log('[WebRTC] ✅ Remote stream saved, audio tracks:', stream.getAudioTracks().length)
+        this.callbacks.onRemoteStream?.(stream)
+      } else {
+        console.error('[WebRTC] ❌ No stream or track available in ontrack event!')
       }
     }
 
@@ -222,7 +305,42 @@ export class WebRTCService {
     this.peerConnection = pc
     console.log('[WebRTC] ✅ Peer connection created')
 
+    // Start diagnostic timer to monitor connection state
+    this.startDiagnostics()
+
     return pc
+  }
+
+  /**
+   * Diagnostic timer - logs connection state every 3 seconds
+   */
+  private startDiagnostics(): void {
+    this.stopDiagnostics()
+    this.diagTimer = setInterval(() => {
+      if (!this.peerConnection) {
+        this.stopDiagnostics()
+        return
+      }
+      const iceState = this.peerConnection.iceConnectionState
+      const connState = this.peerConnection.connectionState
+      const sigState = this.peerConnection.signalingState
+      const localTracks = this.localStream?.getAudioTracks()?.length ?? 0
+      const remoteTracks = this.remoteStream?.getAudioTracks()?.length ?? 0
+      const localEnabled = this.localStream?.getAudioTracks()?.[0]?.enabled
+      const remoteEnabled = this.remoteStream?.getAudioTracks()?.[0]?.enabled
+
+      console.log(
+        `[WebRTC-DIAG] ICE=${iceState} | Conn=${connState} | Sig=${sigState} | ` +
+        `LocalTracks=${localTracks}(enabled=${localEnabled}) | RemoteTracks=${remoteTracks}(enabled=${remoteEnabled})`
+      )
+    }, 3000)
+  }
+
+  private stopDiagnostics(): void {
+    if (this.diagTimer) {
+      clearInterval(this.diagTimer)
+      this.diagTimer = null
+    }
   }
 
   /**
@@ -303,6 +421,8 @@ export class WebRTCService {
       )
       console.log('[WebRTC] ✅ Remote description set')
 
+      this.processPendingCandidates()
+
       console.log('[WebRTC] Creating SDP answer...')
       const answer = await this.peerConnection.createAnswer()
 
@@ -338,6 +458,8 @@ export class WebRTCService {
         new RTCSessionDescription(answer),
       )
       console.log('[WebRTC] ✅ Remote description set')
+      
+      this.processPendingCandidates()
     } catch (error) {
       console.error('[WebRTC] ❌ Set remote answer error:', error)
       this.callbacks.onError?.(error as Error)
@@ -350,10 +472,11 @@ export class WebRTCService {
    * @param candidate ICE candidate from remote peer
    */
   async addIceCandidate(candidate: any): Promise<void> {
-    if (!this.peerConnection) {
-      console.warn(
-        '[WebRTC] ⚠️  Peer connection not ready, ignoring ICE candidate',
+    if (!this.peerConnection || !this.peerConnection.remoteDescription) {
+      console.log(
+        '[WebRTC] ⏳ Queuing ICE candidate (peer connection/remote description not ready)',
       )
+      this.pendingCandidates.push(candidate)
       return
     }
 
@@ -366,7 +489,21 @@ export class WebRTCService {
     } catch (error) {
       console.error('[WebRTC] ⚠️  Add ICE candidate error:', error)
       // Don't throw - ICE candidates can fail gracefully
-      // Connection can still work with other candidates
+    }
+  }
+
+  private async processPendingCandidates() {
+    if (this.pendingCandidates.length > 0) {
+      console.log(`[WebRTC] 🔄 Processing ${this.pendingCandidates.length} queued ICE candidates`)
+      for (const candidate of this.pendingCandidates) {
+        try {
+          await this.peerConnection?.addIceCandidate(new RTCIceCandidate(candidate))
+        } catch (error) {
+          console.error('[WebRTC] ⚠️  Process queued candidate error:', error)
+        }
+      }
+      this.pendingCandidates = []
+      console.log('[WebRTC] ✅ All queued candidates processed')
     }
   }
 
@@ -448,7 +585,8 @@ export class WebRTCService {
    * Close connection and cleanup all resources
    */
   close(): void {
-    console.log('[WebRTC] Closing WebRTC service...')
+    // Stop diagnostics
+    this.stopDiagnostics()
 
     // Stop local stream tracks
     if (this.localStream) {
@@ -464,9 +602,16 @@ export class WebRTCService {
 
     // Clear remote stream reference
     this.remoteStream = null
+    this.pendingCandidates = []
 
     // Reset state
     this.isAudioEnabled = true
+
+    // Stop native audio session
+    if (InCallManager) {
+      console.log('[WebRTC] Stopping InCallManager...')
+      InCallManager.stop()
+    }
 
     console.log('[WebRTC] ✅ WebRTC service closed')
   }

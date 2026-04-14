@@ -235,6 +235,8 @@ wss.on('connection', (ws) => {
           const { to: receiver, offer, callerName } = message;
           
           log(`📞 Call offer: ${currentUserId} → ${receiver}`);
+          log(`   Offer SDP type: ${offer?.type}, sdp length: ${offer?.sdp?.length || 0}`);
+          log(`   Caller Name: ${callerName || 'Unknown'}`);
           
           // Always generate a UUID for the call so we can cancel it later via Push if needed
           let callUuid = null;
@@ -327,20 +329,16 @@ wss.on('connection', (ws) => {
         // ============================================
         case 'call-answer':
           log(`✅ Call answered: ${currentUserId} → ${message.to}`);
-          clearCallTimeout(currentUserId); // currentUserId is the receiver here
+          log(`   Answer SDP length: ${JSON.stringify(message.answer)?.length || 0}`);
           
-          const answerSent = sendToUser(message.to, {
+          clearCallTimeout(message.to);
+          
+          sendToUser(message.to, {
             type: 'call-answer',
             from: currentUserId,
             answer: message.answer,
             timestamp: Date.now(),
           });
-          
-          if (answerSent) {
-            log(`✅ Answer forwarded to ${message.to}`);
-          } else {
-            log(`❌ Failed to forward answer to ${message.to}`);
-          }
           break;
 
         // ============================================
@@ -348,6 +346,7 @@ wss.on('connection', (ws) => {
         // ============================================
         case 'ice-candidate':
           log(`🧊 ICE candidate: ${currentUserId} → ${message.to}`);
+          log(`   Candidate details: ${JSON.stringify(message.candidate)?.substring(0, 200)}`);
           
           sendToUser(message.to, {
             type: 'ice-candidate',

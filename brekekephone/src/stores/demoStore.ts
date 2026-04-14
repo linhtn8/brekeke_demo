@@ -199,6 +199,16 @@ class DemoStore {
       return
     }
 
+    // DEMO MODE CHECK: ONLY ALLOW LOGGING IN AS USERS IN DEMO_CONTACTS
+    const isAllowed = DEMO_CONTACTS.some(c => c.phone === username)
+    if (!isAllowed) {
+      const { RnAlert } = require('#/stores/RnAlert')
+      RnAlert.error({
+        err: new Error(`Login incorrect. Extension ${username} is not allowed in Demo Mode.\nValid extensions:\n${DEMO_CONTACTS.map(c => c.phone).join(', ')}`),
+      })
+      return
+    }
+
     this.isLoading = true
 
     setTimeout(
