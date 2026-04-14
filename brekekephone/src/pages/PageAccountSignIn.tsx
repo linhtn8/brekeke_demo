@@ -92,14 +92,17 @@ const css = StyleSheet.create({
     paddingHorizontal: 40,
   },
   demoLogoContainer: {
-    marginBottom: 50,
+    marginBottom: 40,
     alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 180, // Add minHeight to ensure logo doesn't push text down weirdly
   },
   demoTitle: {
     fontSize: 28,
     fontWeight: 'bold',
     color: 'white',
-    marginTop: 15,
+    marginTop: 10, // Reduce to avoid pushing too far down
+    zIndex: 10,
   },
   demoInputContainer: {
     width: '100%',

@@ -132,7 +132,8 @@ class DemoStore {
    */
   @action endMockCall = () => {
     if (PHASE_2_ENABLED) {
-      ctx.webrtc.endCall(); return
+      ctx.webrtc.endCall()
+      return
     }
 
     console.log('[DemoStore] Ending mock call')
@@ -229,11 +230,21 @@ class DemoStore {
         console.log('[DemoStore] Using existing account:', acc.id)
       }
 
-      if (PHASE_2_ENABLED) {
-        const userId = user.id || user.phone || user.userName
-        const userNameLabel = user.displayName || user.userName || userId
-        ctx.webrtc.connect(userId, userNameLabel)
-      }
+        // Initialize WebRTC signaling if Phase 2 is enabled
+        if (PHASE_2_ENABLED) {
+          // Use the entered username as the WebRTC ID so we can differentiate users
+          const userId = username || ctx.auth.signedInId || 'demo'
+
+          // Try to find a matching contact name, or default to standard label
+          const matchedContact = DEMO_CONTACTS.find(
+            c => c.phone === userId || c.id === userId,
+          )
+          const userNameLabel = matchedContact
+            ? matchedContact.name
+            : `Demo User ${userId}`
+
+          ctx.webrtc.connect(userId, userNameLabel)
+        }
 
       onComplete?.()
       return true

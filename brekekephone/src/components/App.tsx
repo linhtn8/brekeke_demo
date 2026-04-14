@@ -32,6 +32,7 @@ import { DEMO_COLORS, DEMO_MODE } from '#/config/demoConfig'
 import { isEmbed } from '#/embed/polyfill'
 import { RenderAllCalls } from '#/pages/PageCallManage'
 import { PageCustomPageView } from '#/pages/PageCustomPageView'
+import { voipPushService } from '#/services/voipPushService'
 import { getLastSignedInId } from '#/stores/accountStore'
 import {
   isFirstRunFromLocalStorage,
@@ -57,19 +58,28 @@ import { webPromptPermission } from '#/utils/webPromptPermission'
 const initApp = async () => {
   await ctx.intl.wait()
 
-  // DEMO MODE: Clear state and go directly to login screen
+  // Initialize VoIP Push Service if Phase 3 is enabled
+  voipPushService.init()
+
+  // DEMO MODE: Auto-login if we have a saved account
   if (DEMO_MODE) {
-    console.log('DEMO MODE: Clearing state and navigating to Sign In page')
-    // Clear any existing auth state
-    ctx.auth.signedInId = ''
-    // Clear navigation stack
-    RnStacker.stacks = []
-    // Navigate to login (this will set as root and clear stack again)
-    ctx.nav.goToPageAccountSignIn()
-    console.log(
-      'DEMO MODE: Navigation complete, current stack:',
-      RnStacker.stacks.map(s => s.name),
-    )
+    console.log('DEMO MODE: Checking for saved account to auto-login')
+    const savedAccount = ctx.account.accounts[0]
+
+    if (savedAccount && savedAccount.pbxUsername) {
+      console.log(`DEMO MODE: Auto-logging in as ${savedAccount.pbxUsername}`)
+      // Clear navigation stack
+      RnStacker.stacks = []
+      // Call demo login which will set state and initialize WebRTC
+      ctx.demo.login(savedAccount.pbxUsername, () => {
+        ctx.nav.goToPageContactUsers()
+      })
+    } else {
+      console.log('DEMO MODE: Clearing state and navigating to Sign In page')
+      ctx.auth.signedInId = ''
+      RnStacker.stacks = []
+      ctx.nav.goToPageAccountSignIn()
+    }
     return
   }
 
@@ -315,13 +325,6 @@ const css = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  DemoLogoFooter: {
-    position: 'absolute',
-    bottom: 20,
-    right: 20,
-    opacity: 0.6,
-    zIndex: 9999,
-  },
 })
 
 export const App = observer(() => {
@@ -390,13 +393,6 @@ export const App = observer(() => {
       {!ctx.account.appInitDone && (
         <View style={css.LoadingFullscreen}>
           <ActivityIndicator size='large' color='white' />
-        </View>
-      )}
-
-      {/* Demo mode: BAP logo in bottom right corner */}
-      {DEMO_MODE && ctx.auth.signedInId && (
-        <View style={css.DemoLogoFooter} pointerEvents='none'>
-          <BapLogo size={60} />
         </View>
       )}
     </RootView>

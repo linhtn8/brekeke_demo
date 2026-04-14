@@ -422,9 +422,9 @@
 				LastUpgradeCheck = 1250;
 				TargetAttributes = {
 					13B07F861A680F5B00A75B9A = {
-						DevelopmentTeam = 4XR752Y62T;
+						DevelopmentTeam = SUG49M587C;
 						LastSwiftMigration = 1120;
-						ProvisioningStyle = Manual;
+						ProvisioningStyle = Automatic;
 					};
 					9C972B8B28E1B34C00DD89B4 = {
 						CreatedOnToolsVersion = 13.2.1;
@@ -666,26 +666,25 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = BrekekePhone/BrekekePhone.entitlements;
-				CODE_SIGN_STYLE = Manual;
-				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 4XR752Y62T;
-				"DEVELOPMENT_TEAM[sdk=iphoneos*]" = 4XR752Y62T;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 2;
+				DEVELOPMENT_TEAM = SUG49M587C;
 				ENABLE_BITCODE = NO;
 				INFOPLIST_FILE = BrekekePhone/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "Brekeke Phone";
 				IPHONEOS_DEPLOYMENT_TARGET = 16.1;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
 				LIBRARY_SEARCH_PATHS = "$(SDKROOT)/usr/lib/swift$(inherited)";
-				MARKETING_VERSION = 1.0;
+				MARKETING_VERSION = 1.0.1;
 				OTHER_LDFLAGS = (
 					"$(inherited)",
 					"-ObjC",
 					"-lc++",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = com.brekeke.phonedev;
+				PRODUCT_BUNDLE_IDENTIFIER = com.bap.phone;
 				PRODUCT_NAME = "Brekeke Phone Dev";
-				PROVISIONING_PROFILE_SPECIFIER = phonedev;
-				"PROVISIONING_PROFILE_SPECIFIER[sdk=iphoneos*]" = phonedev;
+				PROVISIONING_PROFILE_SPECIFIER = "";
 				SWIFT_OBJC_BRIDGING_HEADER = "BrekekePhone/Bridging-Header.h";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.0;
@@ -702,26 +701,25 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = BrekekePhone/BrekekePhone.entitlements;
-				CODE_SIGN_STYLE = Manual;
-				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 4XR752Y62T;
-				"DEVELOPMENT_TEAM[sdk=iphoneos*]" = 4XR752Y62T;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 2;
+				DEVELOPMENT_TEAM = SUG49M587C;
 				ENABLE_BITCODE = NO;
 				INFOPLIST_FILE = BrekekePhone/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "Brekeke Phone";
 				IPHONEOS_DEPLOYMENT_TARGET = 16.1;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
 				LIBRARY_SEARCH_PATHS = "$(SDKROOT)/usr/lib/swift$(inherited)";
-				MARKETING_VERSION = 1.0;
+				MARKETING_VERSION = 1.0.1;
 				OTHER_LDFLAGS = (
 					"$(inherited)",
 					"-ObjC",
 					"-lc++",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = com.brekeke.phonedev;
+				PRODUCT_BUNDLE_IDENTIFIER = com.bap.phone;
 				PRODUCT_NAME = "Brekeke Phone Dev";
-				PROVISIONING_PROFILE_SPECIFIER = phonedev;
-				"PROVISIONING_PROFILE_SPECIFIER[sdk=iphoneos*]" = phonedev;
+				PROVISIONING_PROFILE_SPECIFIER = "";
 				SWIFT_OBJC_BRIDGING_HEADER = "BrekekePhone/Bridging-Header.h";
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -790,10 +788,7 @@
 					"-DFOLLY_MOBILE=1",
 					"-DFOLLY_USE_LIBCPP=1",
 				);
-				OTHER_LDFLAGS = (
-					"$(inherited)",
-					" ",
-				);
+				OTHER_LDFLAGS = "$(inherited)  ";
 				REACT_NATIVE_PATH = "${PODS_ROOT}/../../node_modules/react-native";
 				SDKROOT = iphoneos;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(inherited) DEBUG";
@@ -854,10 +849,7 @@
 					"-DFOLLY_MOBILE=1",
 					"-DFOLLY_USE_LIBCPP=1",
 				);
-				OTHER_LDFLAGS = (
-					"$(inherited)",
-					" ",
-				);
+				OTHER_LDFLAGS = "$(inherited)  ";
 				REACT_NATIVE_PATH = "${PODS_ROOT}/../../node_modules/react-native";
 				SDKROOT = iphoneos;
 				USE_HERMES = false;
@@ -893,7 +885,7 @@
 				MARKETING_VERSION = 2.17.0;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
-				PRODUCT_BUNDLE_IDENTIFIER = com.brekeke.phonedev.BrekekeLPCExtension;
+				PRODUCT_BUNDLE_IDENTIFIER = com.bap.phone.BrekekeLPCExtension;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "phonedev-LPCExtension";
 				"PROVISIONING_PROFILE_SPECIFIER[sdk=iphoneos*]" = "phonedev-LPCExtension";
@@ -934,7 +926,7 @@
 				LIBRARY_SEARCH_PATHS = "$(SDKROOT)/usr/lib/swift$(inherited)";
 				MARKETING_VERSION = 2.17.0;
 				MTL_FAST_MATH = YES;
-				PRODUCT_BUNDLE_IDENTIFIER = com.brekeke.phonedev.BrekekeLPCExtension;
+				PRODUCT_BUNDLE_IDENTIFIER = com.bap.phone.BrekekeLPCExtension;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "phonedev-LPCExtension";
 				"PROVISIONING_PROFILE_SPECIFIER[sdk=iphoneos*]" = "phonedev-LPCExtension";

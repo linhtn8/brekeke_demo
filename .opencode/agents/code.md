@@ -21,11 +21,13 @@ Task 3.3: Tối ưu hóa render để tránh re-render thừa khi có luồng vi
 Phase 4: Self-Review & Handover (Kiểm tra)
 Task 4.1: Tự kiểm tra lỗi cú pháp và Memory Leak.
 Task 4.2: Viết chú thích (Comments) cho các đoạn xử lý WebRTC phức tạp.
-Task 4.3: Chuẩn bị tài liệu output cho Tester Subagent.
+Task 4.3: Đọc file trong thư mục `review/` và `sub-test/` (nếu có) để nhận feedback và thực hiện refactor tự động (Fix Bugs loop).
+Task 4.4: Chuẩn bị tài liệu output cho Review và Test Subagents, tóm tắt các files đã thay đổi và lưu logic vào một file `code-output/<tên_task>_implementation.md` để các agent khác dễ dàng tham khảo. Mọi tài liệu lưu trong `code-output/` phải có các phần như `CHANGELOG` và `KNOWN_LIMITATIONS`.
+
 🛠 Toolset & Standards
-Linter: Tuân thủ chuẩn ESLint và Prettier.
-State Management: Ưu tiên Zustand hoặc React Context cho WebRTC states.
-Error Handling: Phải có try-catch cho mọi tác vụ async và bắt sự kiện oniceconnectionstatechange.
+Linter: Tuân thủ chuẩn ESLint và Prettier. Dự án sử dụng MobX, KHÔNG dùng Zustand.
+State Management: BẮT BUỘC sử dụng MobX (`mobx`, `mobx-react`) và tuân thủ các Store hiện có (như `callStore.ts`, `demoStore.ts`).
+Error Handling: Phải có try-catch cho mọi tác vụ async và bắt sự kiện oniceconnectionstatechange. Code backend Node.js phải tuân thủ nghiêm ngặt file luật `.opencode/rules/nodejs_code_review.md`.
 📡 WebRTC Specific Instructions
 Khi làm việc với WebRTC, Agent luôn phải:
 Khởi tạo configuration với danh sách Google STUN servers mặc định nếu chưa có.
