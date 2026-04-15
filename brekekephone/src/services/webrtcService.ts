@@ -638,6 +638,26 @@ export class WebRTCService {
   }
 
   /**
+   * Start playing ringback sound (caller side)
+   */
+  startRingback(): void {
+    if (InCallManager) {
+      console.log('[WebRTC] 🔊 Starting ringback...')
+      InCallManager.startRingback()
+    }
+  }
+
+  /**
+   * Stop playing ringback sound
+   */
+  stopRingback(): void {
+    if (InCallManager) {
+      console.log('[WebRTC] 🔇 Stopping ringback...')
+      InCallManager.stopRingback()
+    }
+  }
+
+  /**
    * Get WebRTC statistics
    * @returns Promise<RTCStatsReport>
    */

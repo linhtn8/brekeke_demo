@@ -179,14 +179,20 @@ class DemoStore {
    * Get the list of demo contacts
    */
   @computed get contacts(): DemoContact[] {
+    // Filter out the currently logged-in user so they can't call themselves
+    const currentUserPhone = ctx.auth.getCurrentAccount()?.pbxUsername
+    const availableContacts = DEMO_CONTACTS.filter(
+      c => c.phone !== currentUserPhone,
+    )
+
     // If Phase 2 is enabled, optionally augment contacts with online status
     if (PHASE_2_ENABLED) {
-      return DEMO_CONTACTS.map(c => ({
+      return availableContacts.map(c => ({
         ...c,
         isOnline: ctx.webrtc.onlineUsers.includes(c.phone),
       }))
     }
-    return DEMO_CONTACTS
+    return availableContacts
   }
   /**
    * Demo login - simulates authentication with loading delay

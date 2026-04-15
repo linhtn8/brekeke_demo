@@ -124,6 +124,7 @@ export class WebRTCStore {
       }),
       onCallAnswer: action(async ({ from, answer }) => {
         this.clearCallTimeout()
+        webrtcService.stopRingback()
         try {
           await webrtcService.setRemoteAnswer(answer)
           this.currentCall.status = 'connected'
@@ -138,6 +139,7 @@ export class WebRTCStore {
       }),
       onCallRejected: action(({ reason }) => {
         this.clearCallTimeout()
+        webrtcService.stopRingback()
         ctx.toast.info(reason === 'busy' ? 'User is busy' : 'Call rejected')
         this.endCall(true)
       }),
@@ -283,6 +285,7 @@ export class WebRTCStore {
         ctx.auth.signedInId || 'Me',
       )
       this.currentCall.status = 'ringing'
+      webrtcService.startRingback()
 
       this.startCallTimeout(() => {
         ctx.toast.info('No answer')
@@ -305,6 +308,13 @@ export class WebRTCStore {
       return
     }
     this.clearCallTimeout()
+    
+    // CRITICAL: If the user tapped Answer from the RN UI while CallKit was ringing in the background,
+    // tell CallKit that we answered it so the system audio routing aligns and the CallKit UI dismisses.
+    if (this.currentCall.callUuid) {
+      voipPushService.reportAnswerCall(this.currentCall.callUuid)
+    }
+
     try {
       await webrtcService.getUserMedia()
       webrtcService.createPeerConnection()
@@ -348,6 +358,13 @@ export class WebRTCStore {
     this.clearDurationTimer()
     // Disable WebRTC audio on iOS before cleanup
     BrekekeUtils.webrtcSetAudioEnabled(false, 'demo-call-ended')
+    
+    // CRITICAL: Dismiss native CallKit UI if it's active
+    if (this.currentCall.callUuid) {
+      voipPushService.reportEndCall(this.currentCall.callUuid)
+    }
+
+    webrtcService.stopRingback()
     webrtcService.close()
 
     this.currentCall = {
@@ -358,6 +375,11 @@ export class WebRTCStore {
     }
     this.isAudioMuted = false
     this.remoteStream = null
+
+    // Rout back to contacts directly from the Store when the call truly resets
+    setTimeout(() => {
+      ctx.nav.goToPageContactUsers()
+    }, 150)
   }
 
   @action toggleMute() {
