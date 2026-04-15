@@ -190,9 +190,10 @@ const genMenus = (customPages: PbxCustomPage[]) => {
       }
     })
     m.navFn = () => {
+      normalizeSavedNavigation()
       let k = ctx.auth.getCurrentAccount()?.navSubMenus?.[i]
       if (!k) {
-        return
+        k = m.defaultSubMenuKey
       }
       if (!(k in m.subMenusMap)) {
         k = m.defaultSubMenuKey

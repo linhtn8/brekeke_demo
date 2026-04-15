@@ -25,7 +25,7 @@ export const DEMO_COLORS = {
   primaryDark: '#002171',
 
   // Gradient colors (for BrekekeGradient)
-  gradient: ['#002171', '#0D47A1', '#1565C0'] as const,
+  gradient: ['#c8d6e6', '#558adc', '#3164df'] as const,
 
   // Text colors
   textOnPrimary: '#FFFFFF',
