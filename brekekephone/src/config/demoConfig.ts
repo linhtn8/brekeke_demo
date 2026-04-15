@@ -25,7 +25,7 @@ export const DEMO_COLORS = {
   primaryDark: '#002171',
 
   // Gradient colors (for BrekekeGradient)
-  gradient: ['#002171', '#0D47A1', '#1565C0'] as const,
+  gradient: ['#c8d6e6', '#558adc', '#3164df'] as const,
 
   // Text colors
   textOnPrimary: '#FFFFFF',
@@ -128,7 +128,7 @@ export const WEBRTC_CONFIG = {
   // Free tier: 500MB TURN traffic / month (unlimited STUN).
   //
   // Set to null to use STUN-only (same-network calls only)
-  meteredApiKey: 'null',
+  meteredApiKey: '1e04663844219f3893c67990d74bc0830d82',
   // Example: meteredApiKey: 'your_api_key_here',
   meteredAppName: 'bap-phone',
   // Example: meteredAppName: 'yourappname' (NOT the full domain, just the app name)

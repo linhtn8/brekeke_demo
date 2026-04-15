@@ -112,7 +112,7 @@ const WebAudio = ({ stream }: { stream: any }) => {
       }
     }
   }, [stream])
-  
+
   // Use width 0 instead of display:none, and add playsInline for iOS
   return <audio ref={audioRef} autoPlay playsInline style={{ width: 0, height: 0, opacity: 0, position: 'absolute' }} />
 }
@@ -236,13 +236,19 @@ export const DemoCallScreen = observer(() => {
           </View>
         )}
 
-        {/* Remote audio stream for Phase 2 WebRTC - Web only */}
-        {/* On native iOS, audio plays automatically via RTCAudioSession (no RTCView needed) */}
-        {PHASE_2_ENABLED &&
-          Platform.OS === 'web' &&
-          ctx.webrtc.remoteStream && (
+        {/* Remote audio stream for Phase 2 WebRTC */}
+        {PHASE_2_ENABLED && ctx.webrtc.remoteStream && (
+          Platform.OS === 'web' ? (
             <WebAudio stream={ctx.webrtc.remoteStream} />
-          )}
+          ) : (
+            <RTCView
+              streamURL={typeof ctx.webrtc.remoteStream.toURL === 'function' ? ctx.webrtc.remoteStream.toURL() : ctx.webrtc.remoteStream.id}
+              style={{ width: 0, height: 0, opacity: 0, position: 'absolute' }}
+              objectFit="cover"
+              zOrder={0}
+            />
+          )
+        )}
 
         {/* Hangup Button */}
         <View style={css.hangupButton}>
