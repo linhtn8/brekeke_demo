@@ -124,6 +124,7 @@ export class WebRTCStore {
       }),
       onCallAnswer: action(async ({ from, answer }) => {
         this.clearCallTimeout()
+        webrtcService.stopRingback()
         try {
           await webrtcService.setRemoteAnswer(answer)
           this.currentCall.status = 'connected'
@@ -138,6 +139,7 @@ export class WebRTCStore {
       }),
       onCallRejected: action(({ reason }) => {
         this.clearCallTimeout()
+        webrtcService.stopRingback()
         ctx.toast.info(reason === 'busy' ? 'User is busy' : 'Call rejected')
         this.endCall(true)
       }),
@@ -283,6 +285,7 @@ export class WebRTCStore {
         ctx.auth.signedInId || 'Me',
       )
       this.currentCall.status = 'ringing'
+      webrtcService.startRingback()
 
       this.startCallTimeout(() => {
         ctx.toast.info('No answer')
@@ -361,6 +364,7 @@ export class WebRTCStore {
       voipPushService.reportEndCall(this.currentCall.callUuid)
     }
 
+    webrtcService.stopRingback()
     webrtcService.close()
 
     this.currentCall = {
