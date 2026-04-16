@@ -43,6 +43,7 @@ export class WebRTCStore {
   private callTimeoutTimer: ReturnType<typeof setTimeout> | null = null
   private durationInterval: ReturnType<typeof setInterval> | null = null
   @observable callDurationSeconds: number = 0
+  private isAccepting: boolean = false // Guard for acceptCall
 
   constructor() {
     this.setupServices()
@@ -274,7 +275,7 @@ export class WebRTCStore {
     }
 
     try {
-      await webrtcService.getUserMedia()
+      await webrtcService.getUserMedia(true)
       webrtcService.createPeerConnection()
       webrtcService.addLocalStream()
       const offer = await webrtcService.createOffer()
@@ -304,9 +305,10 @@ export class WebRTCStore {
   }
 
   @action async acceptCall() {
-    if (!this.currentCall.isIncoming || !this.currentCall.remoteOffer) {
+    if (!this.currentCall.isIncoming || !this.currentCall.remoteOffer || this.isAccepting) {
       return
     }
+    this.isAccepting = true
     this.clearCallTimeout()
     
     // CRITICAL: If the user tapped Answer from the RN UI while CallKit was ringing in the background,
@@ -314,9 +316,12 @@ export class WebRTCStore {
     if (this.currentCall.callUuid) {
       voipPushService.reportAnswerCall(this.currentCall.callUuid)
     }
+    
+    // Ensure B doesn't play ringback
+    webrtcService.stopRingback()
 
     try {
-      await webrtcService.getUserMedia()
+      await webrtcService.getUserMedia(false)
       webrtcService.createPeerConnection()
       webrtcService.addLocalStream()
       const answer = await webrtcService.createAnswer(
@@ -336,6 +341,8 @@ export class WebRTCStore {
         ctx.toast.error({ err: new Error('Failed to accept call') })
       }
       this.endCall(true) // end cleanly
+    } finally {
+      this.isAccepting = false
     }
   }
 
@@ -354,6 +361,7 @@ export class WebRTCStore {
   }
 
   @action private resetCallState() {
+    this.isAccepting = false
     this.clearCallTimeout()
     this.clearDurationTimer()
     // Disable WebRTC audio on iOS before cleanup

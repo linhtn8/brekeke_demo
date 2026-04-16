@@ -145,9 +145,10 @@ export class WebRTCService {
 
   /**
    * Get user media (audio only)
+   * @param isCaller Whether the user is the caller (to configure ringback)
    * @returns Promise<MediaStream> Local audio stream
    */
-  async getUserMedia(): Promise<MediaStream> {
+  async getUserMedia(isCaller: boolean = false): Promise<MediaStream> {
     try {
       console.log('[WebRTC] Requesting audio permission...')
 
@@ -178,8 +179,13 @@ export class WebRTCService {
 
       // CRITICAL: natively configure AudioSession to VoIP mode (play and record)
       if (InCallManager) {
-        console.log('[WebRTC] Starting InCallManager...')
-        InCallManager.start({ media: 'audio' })
+        console.log(`[WebRTC] Starting InCallManager (isCaller: ${isCaller})...`)
+        // ONLY configure ringback for Caller (A)
+        const config: any = { media: 'audio' }
+        if (isCaller) {
+          config.ringback = '_BUNDLE_'
+        }
+        InCallManager.start(config)
         // Route audio to earpiece by default (user can toggle speaker)
         InCallManager.setForceSpeakerphoneOn(false)
         InCallManager.setMicrophoneMute(false)
@@ -643,7 +649,9 @@ export class WebRTCService {
   startRingback(): void {
     if (InCallManager) {
       console.log('[WebRTC] 🔊 Starting ringback...')
-      InCallManager.startRingback()
+      InCallManager.stopRingtone()
+      // Now using _BUNDLE_ which will explicitly look for incallmanager_ringback.mp3
+      InCallManager.startRingback('_BUNDLE_')
     }
   }
 
